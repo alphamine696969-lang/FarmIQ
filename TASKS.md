@@ -78,6 +78,7 @@ Update this file after every workflow. Use `docs/TASK_TEMPLATE.md` for substanti
 | FIQ-081 | P0 | Run security and authorization review | Core features | TODO | Findings fixed or documented |
 | FIQ-082 | P1 | Complete end-to-end critical flows | Core features | DONE | Critical journeys pass |
 | FIQ-083 | P1 | Verify production configuration | FIQ-080 | DONE | Deployment checklist completed |
+| FIQ-084 | P1 | Deploy to Vercel via Git integration | FIQ-083 | IN_PROGRESS | Live Vercel URL serving the app; env vars set in dashboard |
 
 ## Task update rules
 - Do not mark a task `DONE` until acceptance criteria are verified.

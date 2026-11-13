@@ -9,6 +9,41 @@ Maintain separate development, staging, and production environments where feasib
 - Provider credentials stored in the hosting platform's secret manager.
 - Automated checks in CI before deployment.
 
+## Vercel (Git integration)
+
+FarmIQ is a standard Next.js App Router project. Vercel auto-detects the framework; no `vercel.json` is required.
+
+### Prerequisites
+- Repository pushed to GitHub (default branch `main`).
+- `npm run build` succeeds locally.
+- `.env.local`, `node_modules/`, `.next/`, and `*.zip` remain gitignored (never committed).
+
+### Connect and deploy
+1. Sign in at [vercel.com](https://vercel.com) with an account that has access to the GitHub repo.
+2. **Add New Project** → **Import** the `FarmIQ` repository.
+3. Confirm project settings (defaults are correct for this repo):
+   - Framework Preset: **Next.js**
+   - Build Command: `npm run build` (or Vercel default)
+   - Output: managed by the Next.js plugin
+   - Install Command: `npm install`
+4. Add environment variables for the target environment (Production / Preview / Development), mirroring `.env.example`:
+   - `NEXT_PUBLIC_APP_NAME`
+   - `NEXT_PUBLIC_APP_URL` — set to the Vercel deployment URL (e.g. `https://farmiq.vercel.app`)
+   - `NEXT_PUBLIC_DEMO_MODE` — `true` until live providers are configured
+   - Optional when available: Supabase, AI, weather, market, maps, exchange-rate keys
+5. Click **Deploy**.
+6. After the first deploy, set `NEXT_PUBLIC_APP_URL` to the final production domain and redeploy if the domain changed.
+
+### Post-deploy verification
+- Open the deployment URL; landing page and public routes render.
+- Hit `/api/health`.
+- Confirm demo/sample data is visibly labeled (ADR-005); no sample value is presented as live.
+- Configure authentication redirect URLs if Supabase auth is enabled.
+- Enable Vercel Password Protection / access controls only if required by policy.
+
+### Git-based updates
+Every push to `main` triggers a Production deployment; pushes to other branches create Preview deployments. Keep secrets out of the repository — configure them only in Vercel project settings.
+
 ## Pre-deployment checklist
 - [ ] Production build succeeds.
 - [ ] Lint and type checks pass.

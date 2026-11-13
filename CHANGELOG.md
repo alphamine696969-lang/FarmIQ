@@ -2,6 +2,11 @@
 
 All notable changes to FarmIQ should be documented here. Follow a simple Keep a Changelog style and use dates where practical.
 
+## [Unreleased]
+### Added
+- Vercel Git-integration deployment guide in `docs/DEPLOYMENT.md` (import repo, env vars, post-deploy checks).
+- Task FIQ-084 to track Vercel production deployment.
+
 ## [1.1.0] - 2026-10-11
 ### Changed
 - Comprehensive UI/UX design overhaul across the entire platform implementing the **FarmIQ Global Smart Farming** design system:

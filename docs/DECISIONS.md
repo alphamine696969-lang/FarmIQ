@@ -38,6 +38,14 @@ Record meaningful decisions here. Do not silently reverse an earlier decision; a
 - **Decision:** Validate citations and disclose insufficient evidence; treatment-specific chemical advice requires applicable official guidance.
 - **Consequences:** Some questions will receive a limitation message instead of a confident answer.
 
+## ADR-007 — Deploy to Vercel via Git integration
+- **Status:** Accepted
+- **Date:** 2026-11-13
+- **Context:** The app is a Next.js App Router project already hosted on GitHub. CLI deploy requires interactive auth not available in this environment.
+- **Options considered:** Vercel CLI token deploy; Git integration; self-hosted Node server.
+- **Decision:** Connect the GitHub repository to Vercel for automatic Production (main) and Preview (branch) deployments. Configure secrets only in Vercel project settings.
+- **Consequences:** Deploys are driven by git pushes; no `vercel.json` required; environment variables must be maintained in the Vercel dashboard rather than local `.env.local`.
+
 ## Decision template
 ### ADR-XXX — Title
 - **Status:** Proposed / Accepted / Superseded
