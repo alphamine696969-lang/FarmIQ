@@ -4,8 +4,26 @@ All notable changes to FarmIQ should be documented here. Follow a simple Keep a 
 
 ## [Unreleased]
 ### Added
+- Layered AI chatbot request pipeline (FIQ-054) implementing `md files for work/FARMIQ_AI_CHATBOT_PIPELINE.md`:
+  - `lib/services/assistant/` modules: input guard (off-topic, injection, length, language detection), intent classifier (8 intents with confidence gate), RAG retriever (pgvector RPC + local lexical index), context assembly (locked system prompt, 4-turn history), generation layer (LLM + extractive fallback + I-don't-know gate), output guard (prompt/identity leak and uncertainty checks), turn logging with quality metrics, and orchestrator.
+  - `lib/integrations/ai/` provider adapter boundary (OpenAI/Anthropic chat, embeddings) with server-side secrets, timeouts, and untrusted-payload validation.
+  - `POST /api/assistant/chat` now runs the full pipeline and returns sources, follow-ups, evidence status, limitations, and provider status; the assistant page calls it instead of running logic in the browser.
+  - Pending migration `supabase/migrations/0001_assistant_chatbot_pipeline.sql` (pgvector knowledge store, `match_farmiq_docs` RPC, `chatbot_logs`) — applies once FIQ-020 configures Supabase.
+  - DeepL translation boundary (`translation.ts`) with honest degradation when unconfigured.
+  - 21-case pipeline test suite in `tests/assistant/pipeline.test.ts` (`npm test` runs both suites).
+  - Provider smoke test `scripts/provider-smoke.ts` (`npm run test:provider`) — real gateway calls through the adapter; classification + generation verified against TokenHarbor.
 - Vercel Git-integration deployment guide in `docs/DEPLOYMENT.md` (import repo, env vars, post-deploy checks).
 - Task FIQ-084 to track Vercel production deployment.
+
+### Changed
+- AI provider replaced with a single TokenHarbor OpenAI-compatible gateway (ADR-009): `AI_BASE_URL`/`AI_API_KEY`, default models `mimo-v2.6-flash:free` (generation) and `deepseek-v4.1-flash:free` (intent); OpenAI/Anthropic adapter paths removed.
+- Assistant answers are real-time from the provider: when the knowledge base has no matching documents the model answers from general farming knowledge with mandatory disclosure and `partial` evidence status instead of a canned refusal (ADR-010). Canned responses remain only for unconfigured/failed providers, guard rejections, and the ADR-006 dosage refusal.
+- Intent classification now runs as a cascade — deterministic keywords first, LLM only for uncertain queries — to conserve free-tier rate limits.
+- Translation switched from DeepL to Google Translate v2 (`GOOGLE_TRANSLATE_API_KEY`).
+- Generation timeout raised to 120s for slow free-tier queues; chat route sets `maxDuration = 180` for Vercel.
+- `tsconfig.json` target set to `ES2017` (required for Unicode regex flags and Set iteration in the pipeline).
+- `.env.example` documents AI provider, model, and translation variables.
+- `lib/services/assistantService.ts` marked deprecated in favor of the pipeline (kept for reference).
 
 ## [1.1.0] - 2026-10-11
 ### Changed

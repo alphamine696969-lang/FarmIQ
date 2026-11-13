@@ -52,6 +52,7 @@ Update this file after every workflow. Use `docs/TASK_TEMPLATE.md` for substanti
 | FIQ-050 | P1 | Build source registry and ingestion contracts | FIQ-020 | DONE | Provenance metadata is stored |
 | FIQ-051 | P1 | Implement document retrieval | FIQ-050 | DONE | Relevant approved documents can be retrieved |
 | FIQ-052 | P1 | Implement assistant and citation validation | FIQ-051 | DONE | Invalid citations are rejected |
+| FIQ-054 | P1 | Implement layered chatbot request pipeline | FIQ-052 | DONE | All 7 pipeline layers run end-to-end with tests; unconfigured providers degrade with labeled fallbacks |
 | FIQ-053 | P2 | Implement multilingual and voice enhancements | FIQ-052 | TODO | Unsupported capabilities degrade gracefully |
 
 ## Markets and weather

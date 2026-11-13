@@ -2,6 +2,10 @@
  * FarmIQ Grounded AI Agricultural Assistant Service
  * Implements RAG principles, citation validation, and strict agricultural safety gates.
  * Complies with ADR-006, FIQ-051, FIQ-052 and docs/AI_MODELS.md.
+ *
+ * @deprecated Superseded by the layered chatbot pipeline in
+ * lib/services/assistant/pipeline.ts (FIQ-054). Kept for reference until the
+ * legacy canned-response path is removed; new code must use the pipeline.
  */
 
 import { APPROVED_SOURCES, SourceCitation } from '../data/mockDatabase';

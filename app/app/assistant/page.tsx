@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { FreshnessBadge } from '@/components/ui/Badge';
-import { generateAssistantResponse, GroundedAssistantResponse } from '@/lib/services/assistantService';
 import {
   Bot,
   Send,
@@ -13,16 +12,35 @@ import {
   BookOpen,
   ExternalLink,
   Info,
-  CheckCircle2,
   Trash2
 } from 'lucide-react';
+
+interface AssistantSource {
+  sourceId?: string;
+  sourceLabel: string;
+  url?: string;
+  excerpt?: string;
+  similarity: number;
+}
+
+interface AssistantMessageData {
+  answer: string;
+  intent: { label: string; confidence: number; method: string };
+  sources: AssistantSource[];
+  followUps: string[];
+  evidenceStatus: 'supported' | 'partial' | 'conflicting' | 'insufficient';
+  limitations: string[];
+  warnings: string[];
+  blocked: boolean;
+  providerConfigured: { generation: boolean; embeddings: boolean; translation: boolean; retrieval: boolean };
+}
 
 interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant';
   text: string;
   timestamp: string;
-  responseMeta?: GroundedAssistantResponse;
+  responseMeta?: AssistantMessageData;
 }
 
 const SAMPLE_PROMPTS = [
@@ -32,70 +50,116 @@ const SAMPLE_PROMPTS = [
   "What chemical pesticide dosage should I spray for blight?", // Tests ADR-006 safety gate
 ];
 
+const WELCOME_MESSAGE: ChatMessage = {
+  id: 'init-01',
+  sender: 'assistant',
+  text: "Hello! I am the FarmIQ Assistant. I answer farming questions live — citing FarmIQ's knowledge base when it has matching documents, and clearly labeling general farming knowledge when it doesn't. Pesticide dosages are always refused (ADR-006). How can I help with your farm today?",
+  timestamp: 'Just now',
+};
+
+function now(): string {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 export default function AssistantPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'init-01',
-      sender: 'assistant',
-      text: "Hello! I am the FarmIQ Grounded Agricultural Assistant. All my responses are strictly grounded in peer-reviewed scientific sources (FAO, USDA, CGIAR, ICAR). In compliance with FarmIQ Trust Principles (ADR-006), I provide evidence-based cultural practices and abstain from unverified synthetic chemical dosages. How can I assist your farm today?",
-      timestamp: 'Just now',
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [providerNote, setProviderNote] = useState<string | null>(null);
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const query = textToSend || inputText;
-    if (!query.trim()) return;
+    if (!query.trim() || isTyping) return;
 
     const userMsg: ChatMessage = {
       id: `msg-${Date.now()}`,
       sender: 'user',
       text: query,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: now(),
     };
 
+    const history = messages.slice(-4).map((msg) => ({ role: msg.sender, content: msg.text }));
     setMessages((prev) => [...prev, userMsg]);
     if (!textToSend) setInputText('');
     setIsTyping(true);
 
-    setTimeout(() => {
-      const response = generateAssistantResponse(query);
+    try {
+      const response = await fetch('/api/assistant/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: query, history }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok || payload?.error) {
+        throw new Error(payload?.error?.message || 'Request failed');
+      }
+
+      const data = payload.data as AssistantMessageData;
+      if (data.providerConfigured && !data.providerConfigured.generation) {
+        setProviderNote(
+          'AI generation provider not configured — answers are labeled extracts from the local knowledge index (ADR-005).'
+        );
+      } else if (data.limitations.some((line) => line.includes('extractive summary'))) {
+        setProviderNote(
+          'AI generation provider unreachable — answers are labeled extracts from the local knowledge index (ADR-005).'
+        );
+      }
+
       const assistantMsg: ChatMessage = {
         id: `asst-${Date.now()}`,
         sender: 'assistant',
-        text: response.answer,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        responseMeta: response,
+        text: data.answer,
+        timestamp: now(),
+        responseMeta: data,
       };
       setMessages((prev) => [...prev, assistantMsg]);
+    } catch {
+      const assistantMsg: ChatMessage = {
+        id: `asst-err-${Date.now()}`,
+        sender: 'assistant',
+        text: 'I could not reach the FarmIQ knowledge base just now. Please try again in a moment.',
+        timestamp: now(),
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+    } finally {
       setIsTyping(false);
-    }, 450);
+    }
   };
 
   const handleClearHistory = () => {
     setMessages([
       {
-        id: 'init-01',
+        id: `init-${Date.now()}`,
         sender: 'assistant',
-        text: "Conversation cleared. Ready for your next agricultural question.",
+        text: "Conversation cleared. Ready for your next farming question.",
         timestamp: 'Just now',
       },
     ]);
+    setProviderNote(null);
   };
+
+  const lastAssistantId = [...messages].reverse().find((m) => m.sender === 'assistant')?.id;
 
   return (
     <AppShell>
       <div className="space-y-6 max-w-5xl mx-auto">
-        
+
         {/* Header with Trust Contract Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-7 rounded-3xl border border-[#DCE5DC] shadow-bento">
           <div>
             <div className="flex items-center gap-2.5">
               <h2 className="text-xl font-extrabold text-[#1C2922]">AI Agricultural Assistant</h2>
-              <FreshnessBadge status="supported" label="Grounded RAG (ADR-006)" />
+              <FreshnessBadge status="supported" label="Layered RAG Pipeline (ADR-006)" />
             </div>
-            <p className="text-xs text-[#3D4A3B] mt-1 font-medium">Grounded in validated FAO 56, USDA AMS, CGIAR, and ICAR extension handbooks.</p>
+            <p className="text-xs text-[#3D4A3B] mt-1 font-medium">
+              Live AI answers. Sources cited when the knowledge base matches; general knowledge clearly labeled otherwise.
+            </p>
+            {providerNote && (
+              <p className="text-[11px] text-[#895100] mt-2 font-bold bg-[#FFF6EB] border border-[#FFE0B2] rounded-xl px-3 py-1.5 inline-block">
+                {providerNote}
+              </p>
+            )}
           </div>
           <button
             onClick={handleClearHistory}
@@ -132,7 +196,7 @@ export default function AssistantPage() {
 
         {/* Chat Window Bento Card */}
         <div className="bg-white rounded-3xl border border-[#DCE5DC] shadow-bento flex flex-col h-[620px] overflow-hidden">
-          
+
           {/* Messages list */}
           <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6">
             {messages.map((msg) => (
@@ -147,7 +211,7 @@ export default function AssistantPage() {
                 )}
 
                 <div className={`max-w-2xl space-y-3 ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}>
-                  
+
                   {/* Message Bubble */}
                   <div
                     className={`inline-block p-5 rounded-3xl text-sm leading-relaxed text-left ${
@@ -156,24 +220,7 @@ export default function AssistantPage() {
                         : 'bg-[#F3FCF3] border border-[#DCE5DC] text-[#1C2922] rounded-tl-sm'
                     }`}
                   >
-                    <p className="font-medium">{msg.text}</p>
-
-                    {/* Grounded steps */}
-                    {msg.responseMeta?.steps && msg.responseMeta.steps.length > 0 && (
-                      <div className="mt-4 pt-3.5 border-t border-[#DCE5DC] space-y-2">
-                        <p className="text-xs font-extrabold text-[#153D2B] uppercase tracking-wider">
-                          Evidence-Backed Next Steps:
-                        </p>
-                        <ul className="space-y-2 text-xs text-[#1C2922]">
-                          {msg.responseMeta.steps.map((st, i) => (
-                            <li key={i} className="flex items-start gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-[#1BC447] shrink-0 mt-0.5" />
-                              <span className="font-medium">{st}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    <p className="font-medium whitespace-pre-line">{msg.text}</p>
 
                     {/* Warnings (Safety Gates) */}
                     {msg.responseMeta?.warnings && msg.responseMeta.warnings.length > 0 && (
@@ -188,34 +235,37 @@ export default function AssistantPage() {
                       </div>
                     )}
 
-                    {/* Source Citations */}
-                    {msg.responseMeta?.citations && msg.responseMeta.citations.length > 0 && (
+                    {/* Knowledge Sources */}
+                    {msg.responseMeta?.sources && msg.responseMeta.sources.length > 0 && (
                       <div className="mt-3.5 pt-3.5 border-t border-[#DCE5DC] space-y-2">
                         <p className="text-[11px] font-extrabold text-[#3D4A3B] uppercase tracking-wider flex items-center gap-1">
                           <BookOpen className="w-3.5 h-3.5 text-[#1BC447]" />
-                          <span>Verified Scientific Citations:</span>
+                          <span>Sources:</span>
                         </p>
                         <div className="space-y-2">
-                          {msg.responseMeta.citations.map((c) => (
+                          {msg.responseMeta.sources.map((source, idx) => (
                             <div
-                              key={c.sourceId}
+                              key={`${source.sourceId ?? source.sourceLabel}-${idx}`}
                               className="bg-white p-3 rounded-2xl border border-[#DCE5DC] text-[11px] space-y-1 shadow-xs"
                             >
                               <div className="flex items-center justify-between font-bold text-[#1C2922]">
-                                <span>{c.sourceName}</span>
-                                <a
-                                  href={c.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[#153D2B] hover:text-[#1BC447] font-bold flex items-center gap-0.5"
-                                >
-                                  <span>View</span>
-                                  <ExternalLink className="w-3 h-3 text-[#1BC447]" />
-                                </a>
+                                <span>{source.sourceLabel}</span>
+                                {source.url && (
+                                  <a
+                                    href={source.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[#153D2B] hover:text-[#1BC447] font-bold flex items-center gap-0.5"
+                                  >
+                                    <span>View</span>
+                                    <ExternalLink className="w-3 h-3 text-[#1BC447]" />
+                                  </a>
+                                )}
                               </div>
-                              <p className="text-[#3D4A3B] text-[10px]">Section: {c.section}</p>
-                              {c.excerpt && (
-                                <p className="italic text-[#3D4A3B] bg-[#EDF6ED] p-2 rounded-xl border border-[#DCE5DC]">"{c.excerpt}"</p>
+                              {source.excerpt && (
+                                <p className="italic text-[#3D4A3B] bg-[#EDF6ED] p-2 rounded-xl border border-[#DCE5DC] line-clamp-3">
+                                  &ldquo;{source.excerpt}&rdquo;
+                                </p>
                               )}
                             </div>
                           ))}
@@ -224,16 +274,43 @@ export default function AssistantPage() {
                     )}
 
                     {/* Evidence Limitations */}
-                    {msg.responseMeta?.limitations && (
-                      <div className="mt-2 text-[10px] text-[#3D4A3B] italic flex items-center gap-1">
-                        <Info className="w-3 h-3 text-slate-500 shrink-0" />
-                        <span>Evidence Limitation: {msg.responseMeta.limitations}</span>
+                    {msg.responseMeta?.limitations && msg.responseMeta.limitations.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {msg.responseMeta.limitations.map((limitation, i) => (
+                          <div key={i} className="text-[10px] text-[#3D4A3B] italic flex items-start gap-1">
+                            <Info className="w-3 h-3 text-slate-500 shrink-0 mt-0.5" />
+                            <span>Limitation: {limitation}</span>
+                          </div>
+                        ))}
                       </div>
                     )}
 
                   </div>
 
                   <span className="block text-[10px] text-[#3D4A3B] font-semibold px-2">{msg.timestamp}</span>
+
+                  {/* Suggested follow-up questions (spec layer 6) */}
+                  {msg.sender === 'assistant' &&
+                    msg.id === lastAssistantId &&
+                    !isTyping &&
+                    (msg.responseMeta?.followUps?.length ?? 0) > 0 && (
+                    <div className="space-y-1.5 mt-1">
+                      <p className="text-[11px] font-extrabold text-[#3D4A3B] uppercase tracking-wider px-1">
+                        You might also ask:
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {msg.responseMeta!.followUps.map((followUp, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => handleSend(followUp)}
+                            className="text-xs px-3.5 py-1.5 rounded-full border border-[#DCE5DC] bg-white text-[#153D2B] font-bold hover:border-[#1BC447] hover:bg-[#EDF6ED] transition-smooth text-left"
+                          >
+                            {followUp}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {msg.sender === 'user' && (
@@ -249,7 +326,7 @@ export default function AssistantPage() {
                 <div className="w-8 h-8 rounded-2xl bg-[#153D2B] text-[#1BC447] flex items-center justify-center">
                   <Bot className="w-4 h-4" />
                 </div>
-                <span>Retrieving verified documents and validating citations...</span>
+                <span>Checking FarmIQ knowledge base...</span>
               </div>
             )}
           </div>
@@ -267,7 +344,7 @@ export default function AssistantPage() {
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder="Ask an agronomic question (e.g. soil pH, blight prevention, irrigation)..."
+                placeholder="Ask a farming question (e.g. soil pH, blight prevention, irrigation)..."
                 className="flex-1 px-5 py-3.5 rounded-full border border-[#DCE5DC] focus:outline-hidden focus:ring-2 focus:ring-[#1BC447] text-sm text-[#1C2922] bg-white shadow-xs"
               />
               <button
@@ -280,7 +357,7 @@ export default function AssistantPage() {
               </button>
             </form>
             <div className="mt-2.5 flex items-center justify-between text-[11px] text-[#3D4A3B] px-1 font-medium">
-              <span>FarmIQ RAG Engine v2.0 • Citations mathematically verified against indexed registries.</span>
+              <span>FarmIQ Assistant • Live AI answers with cited sources when available.</span>
               <span className="text-[#153D2B] font-bold flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#1BC447]" />
                 <span>ADR-006 Safety Protocol</span>

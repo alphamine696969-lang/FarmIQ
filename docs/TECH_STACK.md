@@ -34,7 +34,9 @@ Maintain `.env.example` with descriptions and no real secrets. Likely variables 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` (server only)
-- `OPENAI_API_KEY` or selected AI provider equivalent
+- `AI_BASE_URL` (AI gateway, e.g. https://tokenharbor.ai/v1)
+- `AI_API_KEY` (server only; gateway key for chat/classification)
+- `GOOGLE_TRANSLATE_API_KEY`
 - `WEATHER_API_KEY`
 - `MARKET_DATA_API_KEY`
 - `MAPS_API_KEY`
