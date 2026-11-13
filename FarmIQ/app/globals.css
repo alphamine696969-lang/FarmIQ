@@ -1,0 +1,242 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Global Animation Keyframes ─────────────────────────────────────────── */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-18px); }
+  to   { opacity: 1; transform: translateX(0);     }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1);    }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* ─── Animation Utility Classes ──────────────────────────────────────────── */
+
+.animate-fade-up {
+  animation: fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.35s ease both;
+}
+
+.animate-slide-left {
+  animation: slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Stagger helpers — add to parent, children pick up delay */
+.stagger > *:nth-child(1)  { animation-delay: 0ms;   }
+.stagger > *:nth-child(2)  { animation-delay: 60ms;  }
+.stagger > *:nth-child(3)  { animation-delay: 120ms; }
+.stagger > *:nth-child(4)  { animation-delay: 180ms; }
+.stagger > *:nth-child(5)  { animation-delay: 240ms; }
+.stagger > *:nth-child(6)  { animation-delay: 300ms; }
+.stagger > *:nth-child(7)  { animation-delay: 360ms; }
+.stagger > *:nth-child(8)  { animation-delay: 420ms; }
+.stagger > *:nth-child(9)  { animation-delay: 480ms; }
+
+/* ─── Reduced Motion Safety ───────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer base {
+  :root {
+    --canvas-mint: #F3FCF3;
+    --card-surface: #FFFFFF;
+    --border-leaf: #DCE5DC;
+    --forest-green: #153D2B;
+    --leaf-lime: #1BC447;
+    --harvest-gold: #FD9D1A;
+    --atmosphere-blue: #33B3FC;
+    --text-charcoal: #1C2922;
+    --text-muted: #3D4A3B;
+    --surface-subtle: #EDF6ED;
+    --alert-crimson: #BA1A1A;
+    
+    /* Legacy aliases */
+    --brand-forest: #153D2B;
+    --brand-primary: #1BC447;
+    --brand-lime: #1BC447;
+    --brand-warm-white: #F3FCF3;
+    --brand-text-dark: #1C2922;
+    --brand-text-secondary: #3D4A3B;
+    --brand-border: #DCE5DC;
+    --brand-warning: #FD9D1A;
+    --brand-error: #BA1A1A;
+  }
+
+  body {
+    background-color: var(--canvas-mint);
+    color: var(--text-charcoal);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Universal smooth transitions on interactive elements */
+  a, button, input, textarea, select, [role="button"] {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform, filter;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Crisp press feedback */
+  button:active, [role="button"]:active, a:active {
+    transform: scale(0.97);
+    transition-duration: 80ms;
+  }
+
+  /* Keyboard focus rings — always visible, always on-brand */
+  :focus-visible {
+    outline: 2px solid #1BC447;
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  /* Page main content entry */
+  main {
+    animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Telemetry figures & tabular numbers */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Layer 1: Bento Cards */
+.bento-card {
+  background: #FFFFFF;
+  border: 1px solid #DCE5DC;
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 20px -2px rgba(21, 61, 43, 0.04);
+  transition: box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.bento-card:hover {
+  box-shadow: 0 12px 32px -4px rgba(21, 61, 43, 0.10);
+  border-color: rgba(27, 196, 71, 0.35);
+  transform: translateY(-2px);
+}
+
+/* Layer 2: Floating Command Bars & Docks */
+.glass-command-bar {
+  background: rgba(243, 252, 243, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid #DCE5DC;
+}
+
+.glass-dock-dark {
+  background: rgba(21, 61, 43, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(27, 196, 71, 0.2);
+  box-shadow: 0 12px 32px -4px rgba(21, 61, 43, 0.15);
+}
+
+/* Layer 3: Vibrant Active Accents & Luminescence */
+.glow-lime {
+  box-shadow: 0 8px 20px -4px rgba(27, 196, 71, 0.28);
+}
+
+.glow-ambient {
+  box-shadow: 0 4px 20px -2px rgba(21, 61, 43, 0.04);
+}
+
+/* Smooth Transitions */
+.transition-smooth {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 220ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+/* Status Pills */
+.pill-operational {
+  background-color: #EDF6ED;
+  color: #153D2B;
+  border: 1px solid #DCE5DC;
+}
+
+.pill-warning {
+  background-color: #FFF6EB;
+  color: #895100;
+  border: 1px solid #FFE0B2;
+}
+
+.pill-hydro {
+  background-color: #EDF7FF;
+  color: #004263;
+  border: 1px solid #BEE3F8;
+}
+
+.pill-alert {
+  background-color: #FDF2F2;
+  color: #BA1A1A;
+  border: 1px solid #FCDAD7;
+}
+
+/* ─── Custom Scrollbars ──────────────────────────────────────────────────── */
+
+/* Webkit (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(27, 196, 71, 0.25);
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(27, 196, 71, 0.55);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(27, 196, 71, 0.25) transparent;
+}

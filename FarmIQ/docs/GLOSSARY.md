@@ -1,0 +1,24 @@
+# FarmIQ — Glossary
+
+- **Agricultural extension service:** An organization or professional that provides farmers with research-based practical guidance.
+- **Agro-ecological suitability:** How well a crop may fit local climate, soil, terrain, and other growing conditions.
+- **Break-even price:** Selling price per unit required for revenue to cover the defined total costs at the assumed production level.
+- **Break-even yield:** Production level required to cover the defined costs at the assumed price and land area.
+- **Cached data:** Previously retrieved data reused temporarily under an explicit freshness policy.
+- **Citation:** A reference to a real source that supports a statement.
+- **Crop cycle:** A planting-to-harvest period for a crop on a farm or plot.
+- **Data freshness:** How recent a record is relative to the expected update cadence and the time it describes.
+- **Evidence quality:** The relevance, authority, recency, and applicability of sources supporting an answer.
+- **Farm plot:** A defined area within a farm, potentially with its own crop, soil, or irrigation details.
+- **GAEZ:** FAO's Global Agro-Ecological Zones framework and related datasets for evaluating agricultural potential.
+- **Gross revenue:** Expected production multiplied by assumed selling price before costs.
+- **Market observation:** A price record associated with a market, crop/grade, unit, currency, and observation time.
+- **Net realization:** Revenue after the costs explicitly included in a market-sale comparison, such as transport and selling fees.
+- **RAG:** Retrieval-augmented generation; a system that retrieves source material and supplies it to a language model to ground a response.
+- **ROI:** Return on investment, calculated according to a documented numerator and cost basis. FarmIQ's default is net profit divided by total cost, multiplied by 100.
+- **RLS:** Row Level Security, a database feature that restricts which records a database user can access.
+- **Sample data:** Illustrative data used for demonstration, not verified as a current real-world observation.
+- **Source provenance:** Metadata showing where data came from and when it was observed, retrieved, or updated.
+- **Stale data:** Data older than its configured acceptable freshness threshold.
+- **Unit normalization:** Converting measurements into compatible units before calculations or comparisons.
+- **Vision model:** A machine-learning model that processes images, potentially producing candidate labels or descriptions.
