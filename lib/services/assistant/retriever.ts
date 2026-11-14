@@ -25,6 +25,28 @@ export const LOCAL_MATCH_THRESHOLD = 0.2;
 
 export const DEFAULT_MATCH_COUNT = 4;
 
+/** Adaptive source selection (user requirement): a chunk must be at least
+ * RELATIVE_RELEVANCE_CUTOFF as relevant as the best match, so narrow queries
+ * surface1–2 sources and broad queries up to MAX_MATCH_COUNT — never a fixed
+ * count in every response. */
+export const RELATIVE_RELEVANCE_CUTOFF = 0.6;
+export const MAX_MATCH_COUNT = 6;
+
+/**
+ * Relevance-driven selection over an already sorted (desc) chunk list.
+ * Keeps chunks at or above max(absoluteFloor, topScore * cutoff), capped.
+ */
+export function selectAdaptiveChunks<T extends { similarity: number }>(
+  sorted: T[],
+  absoluteFloor: number,
+  maxCount: number = MAX_MATCH_COUNT
+): T[] {
+  if (sorted.length === 0) return [];
+  const top = sorted[0].similarity;
+  const floor = Math.max(absoluteFloor, top * RELATIVE_RELEVANCE_CUTOFF);
+  return sorted.filter((chunk) => chunk.similarity >= floor).slice(0, maxCount);
+}
+
 export const INSUFFICIENT_EVIDENCE_RESPONSE =
   'I don\u2019t have enough information about that right now. You can ask me about crops, diseases, government schemes, market guidance, or FarmIQ features.';
 
@@ -46,11 +68,13 @@ export function retrieveLocally(message: string, intent: IntentLabel): Retrieval
   const queryTokens = tokenize(message);
   const candidates = getLocalKnowledgeIndex().filter((chunk) => knowledgeBases.includes(chunk.kbName));
 
-  const scored = candidates
-    .map((chunk) => ({ ...chunk, similarity: scoreChunkAgainstQuery(queryTokens, chunk.content) }))
-    .filter((chunk) => chunk.similarity >= LOCAL_MATCH_THRESHOLD)
-    .sort((a, b) => b.similarity - a.similarity)
-    .slice(0, DEFAULT_MATCH_COUNT);
+  const scored = selectAdaptiveChunks(
+    candidates
+      .map((chunk) => ({ ...chunk, similarity: scoreChunkAgainstQuery(queryTokens, chunk.content) }))
+      .filter((chunk) => chunk.similarity >= LOCAL_MATCH_THRESHOLD)
+      .sort((a, b) => b.similarity - a.similarity),
+    LOCAL_MATCH_THRESHOLD
+  );
 
   return {
     chunks: scored,
@@ -132,7 +156,7 @@ async function retrieveViaPgVector(
 
   allChunks.sort((a, b) => b.similarity - a.similarity);
   return {
-    chunks: allChunks.slice(0, DEFAULT_MATCH_COUNT),
+    chunks: selectAdaptiveChunks(allChunks, PGVECTOR_MATCH_THRESHOLD),
     providerConfigured: true,
     method: 'pgvector_rpc',
     thresholdUsed: PGVECTOR_MATCH_THRESHOLD

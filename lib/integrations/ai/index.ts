@@ -162,11 +162,12 @@ export async function generateAnswer(
  * model is opt-in (AI_VISION_MODEL) because multimodal availability varies by
  * gateway; callers must degrade honestly when this returns null.
  */
-export async function analyzeCropPhotos(
+/** Generic multimodal generation: system prompt + user text + up to 3 images. */
+export async function generateVision(
+  systemPrompt: string,
+  userText: string,
   images: string[],
-  cropName: string,
-  weekNumber: number,
-  stageLabel: string
+  maxTokens = 700
 ): Promise<GenerationResult | null> {
   const status = describeProviderStatus();
   if (!status.generationConfigured || !images.length) return null;
@@ -178,31 +179,16 @@ export async function analyzeCropPhotos(
   if (!safeImages.length) return null;
 
   const content: Array<Record<string, unknown>> = [
-    {
-      type: 'text',
-      text: `Crop: ${cropName}. Growth week ${weekNumber} (stage: ${stageLabel}). The farmer attached ${safeImages.length} photo(s) of the crop. Respond with ONLY a JSON object, no markdown fences, exactly these keys:
-{
-  "stage_match": "on_schedule" | "behind_1_week" | "behind_2_plus" | "ahead" | "uncertain",
-  "disease_signs": ["short observable sign", ...] (max 3, [] if none),
-  "nutrient_flags": ["possible deficiency pattern e.g. uniform yellowing", ...] (max 3, [] if none),
-  "severity": "none" | "early" | "moderate" | "severe",
-  "maturity_confirmed": true | false | null,
-  "notes": "max 60 words for the farmer"
-}
-Rules: base stage_match on visible plant structure vs the expected stage. Never suggest pesticide/fertilizer dosages, brand names, or treatment chemicals — disease/nutrient entries are observational only; if unsure use "uncertain" and empty arrays. Use null for maturity_confirmed unless clear maturity cues (dry foliage, filled grain/fruit color) are visible.`
-    },
+    { type: 'text', text: userText },
     ...safeImages.map((src) => ({ type: 'image_url', image_url: { url: src } }))
   ];
 
   const payload = {
     model: visionModel,
-    max_tokens: 600,
+    max_tokens: maxTokens,
     temperature: 0.1,
     messages: [
-      {
-        role: 'system' as const,
-        content: 'You are FarmIQ\u2019s crop photo analyst. Output plain text only; no citations, no invented data, no treatment dosages.'
-      },
+      { role: 'system' as const, content: systemPrompt },
       { role: 'user' as const, content }
     ]
   };
@@ -218,7 +204,28 @@ Rules: base stage_match on visible plant structure vs the expected stage. Never 
     raw = await chatCompletion(payload, VISION_TIMEOUT_MS);
   }
   const text = extractText(raw).trim();
-  return text ? { text: text.slice(0, 1200), modelUsed: visionModel } : null;
+  return text ? { text: text.slice(0, 3000), modelUsed: visionModel } : null;
+}
+
+export async function analyzeCropPhotos(
+  images: string[],
+  cropName: string,
+  weekNumber: number,
+  stageLabel: string
+): Promise<GenerationResult | null> {
+  const systemPrompt =
+    'You are FarmIQ\u2019s crop photo analyst. Output plain text only; no citations, no invented data, no treatment dosages.';
+  const userText = `Crop: ${cropName}. Growth week ${weekNumber} (stage: ${stageLabel}). The attached photo(s) show this crop. Respond with ONLY a JSON object, no markdown fences, exactly these keys:
+{
+  "stage_match": "on_schedule" | "behind_1_week" | "behind_2_plus" | "ahead" | "uncertain",
+  "disease_signs": ["short observable sign", ...] (max 3, [] if none),
+  "nutrient_flags": ["possible deficiency pattern e.g. uniform yellowing", ...] (max 3, [] if none),
+  "severity": "none" | "early" | "moderate" | "severe",
+  "maturity_confirmed": true | false | null,
+  "notes": "max 60 words for the farmer"
+}
+Rules: base stage_match on visible plant structure vs the expected stage. Never suggest pesticide/fertilizer dosages, brand names, or treatment chemicals — disease/nutrient entries are observational only; if unsure use "uncertain" and empty arrays. Use null for maturity_confirmed unless clear maturity cues (dry foliage, filled grain/fruit color) are visible.`;
+  return generateVision(systemPrompt, userText, images, 600);
 }
 
 /* ------------------------------ Embeddings ------------------------------ */

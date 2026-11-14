@@ -303,6 +303,30 @@ async function runTests(): Promise<void> {
   }
   console.log('✔ Weak retrieval falls back to a labeled real-time general-knowledge answer');
 
+  /* ------ Adaptive, query-relevant sources: never a fixed 4-5 every response ------ */
+  const { selectAdaptiveChunks, RELATIVE_RELEVANCE_CUTOFF, retrieveLocally } = await import(
+    '../../lib/services/assistant/retriever'
+  );
+  const adaptiveSelected = selectAdaptiveChunks(
+    [{ similarity: 1.0 }, { similarity: 0.75 }, { similarity: 0.4 }, { similarity: 0.55 }],
+    0.2
+  );
+  assertEqual(adaptiveSelected.length, 2, 'relative floor drops weak matches below top*0.6');
+  assert(RELATIVE_RELEVANCE_CUTOFF > 0 && RELATIVE_RELEVANCE_CUTOFF < 1, 'cutoff is a fraction');
+
+  const narrowQuery = retrieveLocally('minimum support price for wheat', 'price_query');
+  const broadQuery = retrieveLocally('wheat farming disease irrigation market price government scheme', 'general_farming');
+  const narrowSources = new Set(narrowQuery.chunks.map((c) => c.sourceId || c.sourceLabel)).size;
+  const broadSources = new Set(broadQuery.chunks.map((c) => c.sourceLabel)).size;
+  assert(narrowSources >= 1, 'narrow query still returns its relevant source(s)');
+  assert(narrowSources <= 2, 'narrow query is not padded to a fixed source quota');
+  assert(broadSources >= narrowSources, 'broader question can surface at least as many sources');
+  assert(
+    narrowQuery.chunks.every((c) => c.similarity >= 0.2),
+    'every adaptive chunk clears the threshold'
+  );
+  console.log('✔ Sources adapt to query relevance (narrow → few, broad → more)');
+
   console.log('All chatbot pipeline tests passed successfully!');
 }
 

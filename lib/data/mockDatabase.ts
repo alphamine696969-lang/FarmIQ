@@ -18,47 +18,69 @@ export interface SourceCitation {
 export const APPROVED_SOURCES: SourceCitation[] = [
   {
     id: "src-fao-01",
-    sourceName: "FAO Crop Water Requirements & Irrigation Guidelines (FAO 56)",
+    sourceName: "FAO Irrigation Paper 56 — Crop Evapotranspiration",
     organization: "Food and Agriculture Organization of the United Nations (FAO)",
-    canonicalUrl: "https://www.fao.org/land-water/databases-and-software/crop-information",
+    canonicalUrl: "https://www.fao.org/3/x0490e/x0490e00.htm",
     jurisdiction: "Global",
-    license: "Open Access (CC BY-NC-SA 3.0 IGO)",
-    publicationDate: "2023-08-15",
-    section: "Chapter 3: Atmospheric Parameters and Evapotranspiration",
-    excerpt: "Crop coefficients (Kc) for staple grains range from 0.3 during initial vegetative stages to 1.15 at mid-season peak flowering."
+    license: "Open Access",
+    publicationDate: "1998-01-01",
+    section: "Crop coefficients and water requirements",
+    excerpt: "FAO Irrigation Paper 56 defines crop evapotranspiration and crop-coefficient (Kc) methodology used worldwide for irrigation scheduling."
   },
   {
     id: "src-usda-02",
-    sourceName: "USDA Agricultural Marketing Service (AMS) Grain Reports",
+    sourceName: "USDA Agricultural Marketing Service (AMS) Market News",
     organization: "United States Department of Agriculture",
-    canonicalUrl: "https://www.ams.usda.gov/market-news/grain-transportation-report",
+    canonicalUrl: "https://www.ams.usda.gov/market-news",
     jurisdiction: "North America & Global Benchmarks",
     license: "Public Domain / US Gov",
-    publicationDate: "2024-10-01",
-    section: "Weekly National Grain Prices & Export Basis",
-    excerpt: "Historical FOB gulf basis and regional cash bids reflecting seasonal post-harvest harvest pressure."
+    publicationDate: "2026-01-01",
+    section: "Daily grain and commodity market reports",
+    excerpt: "USDA AMS Market News publishes official daily cash bids, movement, and grading information for grains and commodities."
   },
   {
     id: "src-icar-03",
-    sourceName: "ICAR Crop Protection Advisory: Integrated Pest Management Handbook",
-    organization: "Indian Council of Agricultural Research (ICAR)",
-    canonicalUrl: "https://icar.org.in/crop-science-handbook",
-    jurisdiction: "South Asia / Tropical Agro-climates",
-    license: "Official Extension Publications",
-    publicationDate: "2023-11-20",
-    section: "Solanaceous Crops: Early Blight Management",
-    excerpt: "Initial symptoms of Alternaria solani manifest as concentric dark brown rings (target board pattern) on lower foliage. Cultural management includes wide spacing and drip irrigation."
+    sourceName: "Directorate of Plant Protection, Quarantine & Storage (India)",
+    organization: "Department of Agriculture & Farmers' Welfare, Government of India",
+    canonicalUrl: "https://ppqs.gov.in/",
+    jurisdiction: "India",
+    license: "Official Government Publication",
+    publicationDate: "2026-01-01",
+    section: "Plant protection advisories, IPM guidelines, quarantine protocols",
+    excerpt: "PPQS publishes official plant protection advisories, integrated pest management guidelines, and quarantine protocols for Indian agriculture."
   },
   {
     id: "src-cgiar-04",
-    sourceName: "CGIAR Climate-Smart Agriculture Compendium",
+    sourceName: "CGIAR Research on Climate-Smart Agriculture",
     organization: "Consultative Group on International Agricultural Research",
-    canonicalUrl: "https://www.cgiar.org/research/climate-change/",
+    canonicalUrl: "https://www.cgiar.org/research/",
     jurisdiction: "Global Drylands & Smallholder Regions",
     license: "Creative Commons Attribution 4.0",
-    publicationDate: "2024-02-10",
-    section: "Drought Tolerant Cereals and Soil Moisture Retention",
-    excerpt: "Sorghum and pearl millet demonstrate superior water-use efficiency at soil temperatures exceeding 32°C compared to conventional maize."
+    publicationDate: "2026-01-01",
+    section: "Climate-smart agriculture and drought-tolerant crops",
+    excerpt: "CGIAR research programs publish evidence on climate-smart agriculture, drought-tolerant cereals, and soil moisture retention for smallholders."
+  },
+  {
+    id: "src-fao-05",
+    sourceName: "FAO Plant Production & Protection",
+    organization: "Food and Agriculture Organization of the United Nations (FAO)",
+    canonicalUrl: "https://www.fao.org/plant-production-protection/en/",
+    jurisdiction: "Global",
+    license: "Open Access",
+    publicationDate: "2026-01-01",
+    section: "Integrated pest management and plant health guidance",
+    excerpt: "FAO's plant production and protection program publishes integrated pest management guidance and plant health standards for sustainable crop production."
+  },
+  {
+    id: "src-fao-06",
+    sourceName: "FAO Global Information and Early Warning System (GIEWS)",
+    organization: "Food and Agriculture Organization of the United Nations (FAO)",
+    canonicalUrl: "https://www.fao.org/giews/en/",
+    jurisdiction: "Global",
+    license: "Open Access",
+    publicationDate: "2026-01-01",
+    section: "Food supply, demand, and price monitoring",
+    excerpt: "FAO GIEWS monitors global food supply, demand, and commodity price developments with official country and market analyses."
   }
 ];
 

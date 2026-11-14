@@ -3,7 +3,13 @@
 All notable changes to FarmIQ should be documented here. Follow a simple Keep a Changelog style and use dates where practical.
 
 ## [Unreleased]
+
+### Changed
+- **Disease Scanner rebuilt as real AI photo analysis (FIQ-098)** — removed the canned mock scan flow; new flow: enter plant name → upload 1–3 photos (client-compressed) → `POST /api/disease/analyze` (vision model) → structured report with plant identification (and match-confirmation against the entered name), plant details, growing conditions, disease name + why it occurs, severity, recovery steps, prevention steps, and **official sources mapped server-side from `APPROVED_SOURCES`** (the model can only pick ids — it can never supply URLs). Provider failure degrades to an honest fallback plus a clearly-labeled verified reference entry (never presented as a scan). ADR-006: cultural guidance only, no dosages.
+- **Assistant sources are now query-adaptive, not a fixed 4–5** — retrieval selects chunks by relevance floor (≥60% of the best match, ≥ threshold, cap 6) and the pipeline dedupes to one card per source, so narrow questions return1–2 sources and broad ones more, only when they match the question.
+- **Fixed dead official-source URLs (404 bug)** — all `APPROVED_SOURCES` canonical URLs had rotted (404/unreachable); replaced with live, curl-verified official links (FAO Irrigation Paper 56, USDA AMS Market News, PPQS India, CGIAR Research, FAO Plant Production & Protection, FAO GIEWS — all HTTP 200). Added FAO PPP and GIEWS as sources #5–6. Source cards now render excerpts as descriptions instead of fake quotes.
 ### Added
+- Rewrote `docs/API_SPEC.md` as the real API + setup reference: all 12 implemented endpoints with request/response shapes, required env vars (local + Vercel), keyless service allowlist, setup commands, honest auth/limits notes, and the proposed-but-not-implemented list.
 - CropPath crop lifecycle tracker (FIQ-090, spec `md files for work/FARMIQ_AI_CHATBOT_PIPELINE.md` sibling `FARMIQ_CROP_TRACKER.md`) at `/app/crop-path`:
   - Deterministic recommendation engine (goal weighting, season detection incl. monsoon Kharif/Rabi/Zaid, soil/temp/rainfall fit) with financial estimates derived only from labeled sample market data and honest "unavailable" states; optional AI "why this crop" via `POST /api/crop-path/recommend`.
   - Week-by-week growth roadmaps from stage templates scaled to each crop's cycle, with irrigation-aware reminders.

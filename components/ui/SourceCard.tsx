@@ -63,8 +63,8 @@ export const SourceCard: React.FC<SourceCardProps> = ({
       )}
 
       {excerpt && (
-        <p className="text-xs italic text-[#3D4A3B] bg-[#F3FCF3] p-3.5 rounded-2xl border border-[#DCE5DC]">
-          "{excerpt}"
+        <p className="text-xs text-[#3D4A3B] bg-[#F3FCF3] p-3.5 rounded-2xl border border-[#DCE5DC]">
+          <span className="font-bold text-[#1C2922]">About:</span> {excerpt}
         </p>
       )}
 

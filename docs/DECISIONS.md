@@ -114,3 +114,12 @@ Record meaningful decisions here. Do not silently reverse an earlier decision; a
 - **Options considered:**
 - **Decision:**
 - **Consequences:**
+
+## ADR-015: AI Disease Scanner and query-adaptive sources (2026-11-14)
+- **Context:** The Disease Scanner shipped as a canned demo (fixed sample "cases", fake analyzing flow). The assistant returned a fixed top-4 chunks regardless of query (repeated source cards), and every `APPROVED_SOURCES` URL was dead (404), breaking trust in citations.
+- **Decision:**
+  1. Disease Scanner: name-first → photo upload → `POST /api/disease/analyze` with a structured JSON contract (`lib/services/disease/analysis.ts`): plant id + match confirmation, plant/growing conditions, disease + cause, severity, recovery, prevention, and `source_ids` allowlisted against `APPROVED_SOURCES` (URLs mapped server-side only — the model never supplies links). Failure degrades to `fallback: true` plus a clearly-labeled verified reference match (never presented as an image analysis). ADR-006 enforced in the prompt (no dosages/chemicals).
+  2. Assistant sources: adaptive selection — relevance floor `max(threshold, top × 0.6)`, cap 6 chunks, deduped to one card per source (`selectAdaptiveChunks` + `buildSources` dedupe).
+  3. `APPROVED_SOURCES` rebuilt with live, curl-verified official URLs (FAO FAO-56, USDA AMS, PPQS, CGIAR, FAO PPP, FAO GIEWS); source excerpts rendered as descriptions, not quotes.
+- **Alternatives:** Keep mock scanner (rejected — demo data presented as analysis violates "no mock as real"); return fixed K sources (rejected — ignores query need); let the model write source URLs (rejected — trust/SSRF class risk).
+- **Consequences:** Disease results vary with photo quality (honest uncertainty states). Source counts now vary per query (1–6 + dedupe). Vision costs apply per scan.

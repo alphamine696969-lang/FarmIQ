@@ -84,13 +84,23 @@ function blockedResult(params: {
 }
 
 function buildSources(chunks: Array<{ chunkId: string; sourceId?: string; sourceLabel: string; sourceUrl?: string; content: string; similarity: number }>): AssistantSourceRef[] {
-  return chunks.map((chunk) => ({
-    sourceId: chunk.sourceId,
-    sourceLabel: chunk.sourceLabel,
-    url: chunk.sourceUrl,
-    excerpt: chunk.content,
-    similarity: Number(chunk.similarity.toFixed(4))
-  }));
+  // One card per source (chunks arrive sorted by relevance, so the strongest
+  // excerpt wins) — source count follows query relevance, not a fixed quota.
+  const seen = new Set<string>();
+  const sources: AssistantSourceRef[] = [];
+  for (const chunk of chunks) {
+    const key = chunk.sourceId || chunk.sourceLabel;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    sources.push({
+      sourceId: chunk.sourceId,
+      sourceLabel: chunk.sourceLabel,
+      url: chunk.sourceUrl,
+      excerpt: chunk.content,
+      similarity: Number(chunk.similarity.toFixed(4))
+    });
+  }
+  return sources;
 }
 
 export async function runChatPipeline(body: AssistantChatRequestBody): Promise<PipelineResult> {
