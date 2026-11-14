@@ -14,6 +14,8 @@ export interface SoilTexture {
   siltPct: number;
   /** Simplified USDA-style class derived from the three fractions. */
   textureClass: string;
+  /** Soil pH (0-5 cm, mean) when the phh2o layer is reachable; null otherwise. */
+  ph: number | null;
   sourceName: string;
   retrievedAt: string;
 }
@@ -92,11 +94,18 @@ export async function fetchSoilTexture(lat: number, lon: number): Promise<SoilTe
     ]);
     if (sandPct === null || siltPct === null) return null;
 
+    // pH comes from the phh2o layer (d_factor10 → pH units). Non-fatal: null.
+    const phParams = new URLSearchParams({ lon: String(lon), lat: String(lat), property: 'phh2o', depth: '0-5cm', value: 'mean' });
+    const phRaw = await fetchJson(`${SOILGRIDS_HOST}?${phParams.toString()}`).catch(() => null);
+    const ph = phRaw !== null ? readLayerMean(phRaw, 'phh2o') : null;
+    const phValue = ph !== null && ph >= 0 && ph <= 14 ? Number(ph.toFixed(1)) : null;
+
     return {
       sandPct,
       clayPct,
       siltPct,
       textureClass: classifyTexture(sandPct, clayPct, siltPct),
+      ph: phValue,
       sourceName: 'ISRIC SoilGrids v2 (FAO/ISRIC)',
       retrievedAt: new Date().toISOString()
     };

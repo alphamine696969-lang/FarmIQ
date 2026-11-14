@@ -123,3 +123,12 @@ Record meaningful decisions here. Do not silently reverse an earlier decision; a
   3. `APPROVED_SOURCES` rebuilt with live, curl-verified official URLs (FAO FAO-56, USDA AMS, PPQS, CGIAR, FAO PPP, FAO GIEWS); source excerpts rendered as descriptions, not quotes.
 - **Alternatives:** Keep mock scanner (rejected — demo data presented as analysis violates "no mock as real"); return fixed K sources (rejected — ignores query need); let the model write source URLs (rejected — trust/SSRF class risk).
 - **Consequences:** Disease results vary with photo quality (honest uncertainty states). Source counts now vary per query (1–6 + dedupe). Vision costs apply per scan.
+
+## ADR-016: Crop Advisor — live location context and full catalog (2026-11-14)
+- **Context:** The Crop Advisor showed a fixed5-crop suitability list scored from fake manual sliders — no location, no live data, and most crops invisible.
+- **Decision:**
+  1. Location/region first: type-ahead search (Open-Meteo geocoding) or GPS → `POST /api/crop-advisor/context` returns observed90-day climate (mean temperature, precipitation total — labeled as observed history, not normals/forecast) and SoilGrids soil (texture class + pH). Each field auto-fills with a live-source badge; missing providers produce honest reasons and keep manual sliders.
+  2. Comprehensive catalog: `lib/data/cropCatalog.ts` —66 crops /11 categories with accepted temperature, pH, rainfall, texture, cycle, resilience and cultural guidance (no yield or profit claims; every entry cites an APPROVED_SOURCES id with a verified HTTP-200 URL). The assistant knowledge index is generated from the same catalog.
+  3. Deterministic scoring stays client-side and testable (`scoreCrops`): pH +5/−35, temperature −30, rainfall −20, soil −15, clamped20–98 — unchanged rules, now applied to the whole catalog with filters/search and a show-all toggle.
+- **Alternatives:** AI-scored crops (rejected — unverifiable rankings, cost/latency); keep fixed presets (rejected — the stated requirement); ship yield numbers (rejected — trust rule against invented yields).
+- **Consequences:** SoilGrids remains flaky (documented honest null). Observed90-day climate approximates current-season conditions, not long-term normals — labeled as such in the UI.

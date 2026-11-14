@@ -44,6 +44,26 @@ Request: `{ "message": string, "history"?: Turn[], "userId"?: string }` → resp
 | POST | `/api/crop-path/report` | Optional AI assessment of a weekly report | TokenHarbor gateway |
 | POST | `/api/crop-path/photo` | Structured vision analysis of report/maturity photos (stage match, disease/nutrient observations, maturity flag); raster-only ≤1.5 MB ×3, 6 MB body cap, `maxDuration: 120` | TokenHarbor gateway (`AI_VISION_MODEL`) |
 
+### Disease scanner & Crop Advisor
+
+| Method | Path | Purpose | External dependencies |
+|---|---|---|---|
+| POST | `/api/disease/analyze` | AI disease analysis of a named plant's photos: plant ID + match check, growing conditions, disease + cause, severity, recovery/prevention steps, official sources allowlisted from `APPROVED_SOURCES` (model picks ids, URLs mapped server-side); raster-only ≤3 images, 6 MB cap, `maxDuration: 120`; honest `fallback: true` | TokenHarbor gateway (`AI_VISION_MODEL`) |
+| POST | `/api/crop-advisor/context` | Observed 90-day climate (mean temperature, precipitation total) + SoilGrids soil (texture class + pH) for a location; each field degrades to `null` + reason | Open-Meteo Forecast (`past_days=90`), ISRIC SoilGrids |
+
+```jsonc
+// POST /api/disease/analyze
+{ "plantName": "tomato", "images": ["data:image/jpeg;base64,..."] }
+// → { data: { report: { plantIdentified, plantMatchConfirmed, plantDetails, growingConditions,
+//     diseaseName, diseaseWhy, severity, recoverySteps[], preventionSteps[], sourceIds[] },
+//   sources: [{ id, sourceName, organization, canonicalUrl }], providerUsed, fallback } }
+
+// POST /api/crop-advisor/context
+{ "lat": 31.63, "lon": 74.87, "label": "Ludhiana" }   // or { "place": "Nakuru" }
+// → { data: { available, location, climate: {avgTempC, totalPrecipMm, sourceName, ...} | null,
+//     soil: {textureClass, ph, sourceName, ...} | null, currentTempC, reasons[] } }
+```
+
 Key request shapes:
 
 ```jsonc
@@ -106,13 +126,13 @@ These are hardcoded allowlist hosts — user input is only ever sent as an encod
 
 | Service | Host | Used by |
 |---|---|---|
-| Open-Meteo Forecast | `api.open-meteo.com` | `/api/crop-path/context`, `/api/crop-path/weather` |
+| Open-Meteo Forecast | `api.open-meteo.com` | `/api/crop-path/context`, `/api/crop-path/weather`, `/api/crop-advisor/context` (observed 90-day climate) |
 | Open-Meteo Geocoding | `geocoding-api.open-meteo.com` | `/api/crop-path/geocode`, context/weather fallback |
 | Photon (OSM) | `photon.komoot.io` | geocoding fallback + suggestions |
-| ISRIC SoilGrids | `rest.isric.org` | soil texture in `/api/crop-path/context` (degrades to manual selector) |
+| ISRIC SoilGrids | `rest.isric.org` | soil texture + pH in `/api/crop-path/context` and `/api/crop-advisor/context` (degrades to manual inputs) |
 | Eurostat | `ec.europa.eu/eurostat/api/...` | `/api/crop-path/prices` (EU coverage only) |
 
-All are free/keyless. Open-Meteo requests are cached in-memory (weather 10 min, failures 60 s, prices 15 min, context 10 min).
+All are free/keyless. Open-Meteo requests are cached in-memory (weather 10 min, failures 60 s, prices 15 min, context 10 min, crop-advisor context 10 min).
 
 ### Local setup
 
@@ -120,7 +140,7 @@ All are free/keyless. Open-Meteo requests are cached in-memory (weather 10 min, 
 npm install
 cp .env.example .env.local      # add AI_API_KEY for live AI (optional)
 npm run dev                     # http://localhost:3000
-npm test                        # 5 offline test suites (must pass)
+npm test                        # 7 offline test suites (must pass)
 npm run test:provider           # optional: live TokenHarbor smoke test
 npm run build                   # production build (stop dev server first)
 ```
@@ -150,5 +170,4 @@ Kept honest so this spec stays a contract of record:
 | `/api/profit/scenarios*` | TODO — server-side scenario CRUD (currently localStorage) |
 | `/api/farms*` | TODO — farm/plot CRUD API (currently localStorage UI) |
 | `/api/weather/forecast`, `/api/weather/alerts` | Partial — CropPath weather route covers field alerts; page-level live weather is FIQ-092+ follow-up |
-| `/api/disease/analyze` | TODO — depends on vision provider config (FIQ-073 boundary exists in CropPath photo route) |
 | `/api/markets/trends` | TODO — needs a live market feed (sample data currently served via `/api/markets/search`) |

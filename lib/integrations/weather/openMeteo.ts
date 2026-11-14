@@ -287,3 +287,66 @@ export async function fetchOpenMeteoForecast(lat: number, lon: number, days = 7)
     retrievedAt: new Date().toISOString()
   };
 }
+
+export interface RecentClimate {
+  /** Mean daily temperature over the observed window (°C). */
+  avgTempC: number;
+  /** Total precipitation over the observed window (mm). */
+  totalPrecipMm: number;
+  daysCounted: number;
+  windowDays: number;
+  sourceName: string;
+  retrievedAt: string;
+}
+
+/**
+ * Observed climate for the last 90 days (Open-Meteo forecast API, past_days=90).
+ * Used by the Crop Advisor as honest recent conditions for a location —
+ * labeled as observed history, not a climate normal or a forecast.
+ */
+export async function fetchRecentClimate(lat: number, lon: number, windowDays = 90): Promise<RecentClimate | null> {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  const params = new URLSearchParams({
+    latitude: String(lat),
+    longitude: String(lon),
+    daily: 'temperature_2m_mean,precipitation_sum',
+    past_days: String(Math.min(92, Math.max(30, windowDays))),
+    forecast_days: '1',
+    timezone: 'auto'
+  });
+  try {
+    const payload = await fetchJson(`${FORECAST_HOST}?${params.toString()}`);
+    if (typeof payload !== 'object' || payload === null) return null;
+    const daily = (payload as Record<string, unknown>).daily;
+    if (typeof daily !== 'object' || daily === null) return null;
+    const d = daily as Record<string, unknown>;
+    const temps = Array.isArray(d.temperature_2m_mean) ? (d.temperature_2m_mean as unknown[]) : [];
+    const precips = Array.isArray(d.precipitation_sum) ? (d.precipitation_sum as unknown[]) : [];
+    const today = new Date().toISOString().slice(0, 10);
+    const times = Array.isArray(d.time) ? (d.time as unknown[]) : [];
+    let tempSum = 0;
+    let precipSum = 0;
+    let counted = 0;
+    for (let i = 0; i < temps.length; i += 1) {
+      const date = typeof times[i] === 'string' ? (times[i] as string) : '';
+      if (date > today) continue; // observed window only — no forecast days
+      const t = num(temps[i]);
+      if (t === null) continue;
+      tempSum += t;
+      counted += 1;
+      const p = num(precips[i]);
+      if (p !== null && p >= 0) precipSum += p;
+    }
+    if (counted < 30) return null;
+    return {
+      avgTempC: Number((tempSum / counted).toFixed(1)),
+      totalPrecipMm: Number(precipSum.toFixed(0)),
+      daysCounted: counted,
+      windowDays: Math.min(92, Math.max(30, windowDays)),
+      sourceName: `Open-Meteo observed (last ${counted} days)`,
+      retrievedAt: new Date().toISOString()
+    };
+  } catch {
+    return null;
+  }
+}

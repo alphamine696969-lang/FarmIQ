@@ -10,9 +10,9 @@
 
 import {
   APPROVED_SOURCES,
-  CROP_SUITABILITY_DB,
   DISEASE_KNOWLEDGE_BASE
 } from '../../data/mockDatabase';
+import { CROP_ADVISORY_CATALOG } from '../../data/cropCatalog';
 import { KnowledgeBase, RetrievedChunk } from './types';
 
 export interface KnowledgeChunkDefinition {
@@ -28,18 +28,16 @@ function sourceById(id: string) {
   return APPROVED_SOURCES.find((source) => source.id === id);
 }
 
-/** Crop profile chunks generated from the existing suitability dataset. */
+/** Crop profile chunks generated from the full advisory catalog (all crops). */
 function cropChunks(): KnowledgeChunkDefinition[] {
-  return CROP_SUITABILITY_DB.map((crop) => ({
+  return CROP_ADVISORY_CATALOG.map((crop) => ({
     chunkId: `kb_crops-${crop.cropName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
     kbName: 'kb_crops' as KnowledgeBase,
     content:
-      `${crop.cropName} (${crop.category}). Optimal temperature: ${crop.optimalTempC}. ` +
-      `Optimal soil pH: ${crop.optimalPh} (accepted range ${crop.minPh}-${crop.maxPh}). ` +
-      `Seasonal rainfall requirement: ${crop.minRainfallMm}-${crop.maxRainfallMm} mm. ` +
-      `Suitable soils: ${crop.suitableSoilTypes.join(', ')}. Growth cycle: about ${crop.growthCycleDays} days. ` +
-      `Typical yield potential: ${crop.potentialYieldPerAcre} per acre. Resilience score: ${crop.resilienceScore}/10. ` +
-      `Agronomic note: ${crop.keyAgronomicAdvice}`,
+      `${crop.cropName} (${crop.category}). Accepted temperature range: ${crop.minTempC}-${crop.maxTempC}°C. ` +
+      `Accepted soil pH: ${crop.minPh}-${crop.maxPh}. Seasonal rainfall requirement: ${crop.minRainfallMm}-${crop.maxRainfallMm} mm. ` +
+      `Suitable soils: ${crop.suitableSoilTypes.join(', ')}. Growth cycle: ${crop.cycleLabel || `about ${crop.growthCycleDays} days`}. ` +
+      `Resilience score: ${crop.resilienceScore}/10. Agronomic note: ${crop.keyAgronomicAdvice}`,
     sourceId: crop.scientificReferenceId,
     sourceLabel: sourceById(crop.scientificReferenceId)?.sourceName ?? 'FarmIQ crop dataset',
     sourceUrl: sourceById(crop.scientificReferenceId)?.canonicalUrl
