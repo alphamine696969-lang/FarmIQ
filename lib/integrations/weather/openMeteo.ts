@@ -158,6 +158,42 @@ async function geocodeWithPhoton(q: string): Promise<GeoLocation | null> {
  * right one from the list (that selection is what fixes "wrong place").
  * Photon results are still restricted to places/boundaries (no shops).
  */
+/**
+ * Reverse geocode coordinates → place + country (Photon OSM reverse endpoint,
+ * allowlisted host). Used by Markets to resolve the farmer's region from GPS.
+ */
+export async function reverseGeocode(lat: number, lon: number): Promise<GeoLocation | null> {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  try {
+    const payload = await fetchJson(`https://photon.komoot.io/reverse/?lat=${lat}&lon=${lon}`);
+    if (typeof payload !== 'object' || payload === null) return null;
+    const features = (payload as Record<string, unknown>).features;
+    if (!Array.isArray(features) || features.length === 0) return null;
+    const feature = features[0];
+    if (typeof feature !== 'object' || feature === null) return null;
+    const props = (feature as Record<string, unknown>).properties;
+    if (typeof props !== 'object' || props === null) return null;
+    const p = props as Record<string, unknown>;
+    const name =
+      (typeof p.city === 'string' && p.city) ||
+      (typeof p.county === 'string' && p.county) ||
+      (typeof p.state === 'string' && p.state) ||
+      (typeof p.name === 'string' && p.name) ||
+      null;
+    if (!name) return null;
+    return {
+      name,
+      admin1: typeof p.state === 'string' ? p.state : undefined,
+      country: typeof p.country === 'string' ? p.country : undefined,
+      countryCode: typeof p.countrycode === 'string' ? p.countrycode.toUpperCase() : undefined,
+      latitude: lat,
+      longitude: lon
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function searchPlaces(query: string, limit = 5): Promise<GeoLocation[]> {
   const q = query.trim();
   if (q.length < 3) return [];

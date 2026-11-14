@@ -25,7 +25,6 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 import { getStoredUserProfile, UserProfile } from '@/lib/data/userState';
-import { INITIAL_MARKET_OBSERVATIONS } from '@/lib/data/mockDatabase';
 import { SAMPLE_WEATHER_DATA } from '@/lib/data/weatherData';
 
 export default function DashboardPage() {
@@ -308,28 +307,16 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-extrabold text-[#1C2922]">Market Price Watch</h3>
-                <p className="text-[11px] text-[#3D4A3B]">Benchmark regional commodity bids.</p>
+                <p className="text-[11px] text-[#3D4A3B]">Official prices for your region.</p>
               </div>
-              <FreshnessBadge status="sample-historical" label="Sample" />
+              <FreshnessBadge status="live" label="Official source" />
             </div>
 
-            <div className="space-y-3">
-              {INITIAL_MARKET_OBSERVATIONS.slice(0, 4).map((obs) => (
-                <div key={obs.id} className="p-3.5 rounded-2xl bg-[#F3FCF3] border border-[#DCE5DC] space-y-1.5 hover:bg-white transition-colors">
-                  <div className="flex justify-between items-center text-xs font-bold text-[#1C2922]">
-                    <span>{obs.cropName}</span>
-                    <span className="font-mono text-[#153D2B] font-extrabold tabular-nums">{obs.price} {obs.currency}/{obs.unit}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-[11px] text-[#3D4A3B]">
-                    <span className="truncate max-w-[150px]">{obs.marketName}</span>
-                    <span className={`font-bold tabular-nums px-2 py-0.5 rounded-full text-[10px] ${
-                      obs.priceChangePercent24h >= 0 ? 'bg-[#EDF6ED] text-[#153D2B] border border-[#DCE5DC]' : 'bg-[#BA1A1A]/10 text-[#BA1A1A]'
-                    }`}>
-                      {obs.priceChangePercent24h >= 0 ? `+${obs.priceChangePercent24h}%` : `${obs.priceChangePercent24h}%`}
-                    </span>
-                  </div>
-                </div>
-              ))}
+            <div className="p-5 rounded-2xl bg-[#F3FCF3] border border-[#DCE5DC] space-y-2 text-center">
+              <p className="text-xs font-extrabold text-[#1C2922]">Pick your region to load live official prices</p>
+              <p className="text-[11px] text-[#3D4A3B] font-medium leading-relaxed">
+                Prices come straight from the official source with provenance — no sample or simulated numbers are shown anywhere in FarmIQ.
+              </p>
             </div>
 
             <div className="pt-2">

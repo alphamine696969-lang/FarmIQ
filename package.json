@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "npx sucrase-node tests/profit.test.ts && npx sucrase-node tests/assistant/pipeline.test.ts && npx sucrase-node tests/disease/analysis.test.ts && npx sucrase-node tests/cropAdvisor/scoring.test.ts && npx sucrase-node tests/cropPath/cropPath.test.ts && npx sucrase-node tests/cropPath/weather.test.ts && npx sucrase-node tests/cropPath/workflowV2.test.ts",
+    "test": "npx sucrase-node tests/profit.test.ts && npx sucrase-node tests/assistant/pipeline.test.ts && npx sucrase-node tests/disease/analysis.test.ts && npx sucrase-node tests/cropAdvisor/scoring.test.ts && npx sucrase-node tests/markets/noMock.test.ts && npx sucrase-node tests/cropPath/cropPath.test.ts && npx sucrase-node tests/cropPath/weather.test.ts && npx sucrase-node tests/cropPath/workflowV2.test.ts",
     "test:provider": "npx sucrase-node scripts/provider-smoke.ts"
   },
   "dependencies": {

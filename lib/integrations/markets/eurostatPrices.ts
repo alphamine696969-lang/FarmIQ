@@ -28,6 +28,58 @@ const CROP_CODE_MAP: Array<{ keywords: string[]; code: string }> = [
   { keywords: ['rape'], code: '02110000' }
 ];
 
+/** Display names for every crop the adapter can price (FIQ-100 markets page). */
+export const EUROSTAT_MARKET_CROPS: Array<{ name: string; keyword: string }> = [
+  { name: 'Wheat', keyword: 'wheat' },
+  { name: 'Maize', keyword: 'maize' },
+  { name: 'Soybeans', keyword: 'soybean' },
+  { name: 'Tomato', keyword: 'tomato' },
+  { name: 'Chickpea', keyword: 'chickpea' },
+  { name: 'Potato', keyword: 'potato' },
+  { name: 'Barley', keyword: 'barley' },
+  { name: 'Rice', keyword: 'rice' },
+  { name: 'Peas', keyword: 'pea' },
+  { name: 'Common bean', keyword: 'bean' },
+  { name: 'Sunflower', keyword: 'sunflower' },
+  { name: 'Rapeseed', keyword: 'rape' }
+];
+
+export interface MarketPriceRow {
+  cropName: string;
+  price: number;
+  unit: string;
+  currency: string;
+  period: string;
+  sourceName: string;
+  datasetUrl: string;
+  retrievedAt: string;
+}
+
+/**
+ * Official prices for every mapped crop in one country (parallel fetches).
+ * Non-covered crops are silently excluded — the caller shows only real rows.
+ */
+export async function fetchEurostatAllPrices(countryCode: string): Promise<MarketPriceRow[]> {
+  if (!isValidCountryCode(countryCode)) return [];
+  const results = await Promise.all(
+    EUROSTAT_MARKET_CROPS.map(async (entry) => {
+      const info = await fetchEurostatCropPrice(entry.keyword, countryCode);
+      if (!info) return null;
+      return {
+        cropName: entry.name,
+        price: info.price,
+        unit: info.unit,
+        currency: info.currency,
+        period: info.period,
+        sourceName: info.sourceName,
+        datasetUrl: info.datasetUrl,
+        retrievedAt: info.retrievedAt
+      } satisfies MarketPriceRow;
+    })
+  );
+  return results.filter((row): row is MarketPriceRow => row !== null);
+}
+
 export function mapCropToEurostatCode(cropName: string): string | null {
   const lower = cropName.toLowerCase();
   for (const entry of CROP_CODE_MAP) {

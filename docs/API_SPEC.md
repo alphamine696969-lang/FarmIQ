@@ -21,7 +21,7 @@ Provider failures never return 500 for upstream issues — they degrade to `data
 |---|---|---|---|
 | GET | `/api/health` | Non-sensitive health check (status, trust flags) | None |
 | POST | `/api/profit/calculate` | Deterministic profit / break-even calculation | None |
-| GET | `/api/markets/search?crop=` | Market observations (**sample-historical data, labeled**) | None |
+| POST | `/api/markets/prices` | Region-based **official** crop prices: resolves place/GPS → country, returns Eurostat producer prices (latest published period) or an honest not-covered state; never serves sample data | Eurostat `apri_ap_crpouta`, Open-Meteo geocoding, Photon reverse |
 | GET | `/api/weather/current` | Current agro-weather snapshot (**sample data, labeled**) | None |
 
 ### AI assistant
@@ -170,4 +170,4 @@ Kept honest so this spec stays a contract of record:
 | `/api/profit/scenarios*` | TODO — server-side scenario CRUD (currently localStorage) |
 | `/api/farms*` | TODO — farm/plot CRUD API (currently localStorage UI) |
 | `/api/weather/forecast`, `/api/weather/alerts` | Partial — CropPath weather route covers field alerts; page-level live weather is FIQ-092+ follow-up |
-| `/api/markets/trends` | TODO — needs a live market feed (sample data currently served via `/api/markets/search`) |
+| `/api/markets/trends` | TODO — price time-series/trends; official point-in-time prices now served via `/api/markets/prices` (no sample data) |

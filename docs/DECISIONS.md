@@ -132,3 +132,13 @@ Record meaningful decisions here. Do not silently reverse an earlier decision; a
   3. Deterministic scoring stays client-side and testable (`scoreCrops`): pH +5/−35, temperature −30, rainfall −20, soil −15, clamped20–98 — unchanged rules, now applied to the whole catalog with filters/search and a show-all toggle.
 - **Alternatives:** AI-scored crops (rejected — unverifiable rankings, cost/latency); keep fixed presets (rejected — the stated requirement); ship yield numbers (rejected — trust rule against invented yields).
 - **Consequences:** SoilGrids remains flaky (documented honest null). Observed90-day climate approximates current-season conditions, not long-term normals — labeled as such in the UI.
+
+## ADR-017: Market Prices — official region-based feed, no sample fallback (2026-11-14)
+- **Context:** The Markets page rendered a fixed list of sample observations (fake prices, fake 24h changes) with a "Sample Benchmarks" badge; a mock `/api/markets/search` endpoint served the same rows. The stated requirement: remove mock data and make prices real-time by region.
+- **Decision:**
+  1. Single official source for now: Eurostat `apri_ap_crpouta` (official annual producer prices, latest published period — explicitly labeled as annual statistics, not a daily quote). Region resolution: picked/typed place (Open-Meteo geocoding) or GPS → Photon reverse geocoding → country code.
+  2. Coverage honesty: EU countries → live official rows with period + dataset link per crop; any other country → `not_covered` with a clear "no live feed connected" reason. **No sample fallback, ever** — an empty honest state beats fake numbers (trust over confidence).
+  3. Net-realization calculator retained but recomputed from the selected official price; freight/handling are user-entered estimates, labeled as such.
+  4. All sample market data deleted (`INITIAL_MARKET_OBSERVATIONS`, `MarketObservation`, mock search route); dashboard and landing widgets replaced with honest teasers. Guard test `tests/markets/noMock.test.ts` fails if sample rows reappear in any market surface.
+- **Alternatives:** Scrape mandi/mandi APIs (rejected — ToS/robots risk, needs keys); keep labeled sample rows (rejected — requirement says remove mock); present Eurostat as "real-time daily" (rejected — misleading; period shown on every row).
+- **Consequences:** Non-EU users see honest unavailability until a licensed regional feed (e.g. Agmarknet with an API key) is connected. France series in this dataset end 2016 for some crops — the period is shown, so staleness is visible. Daily market quotes remain future work (FIQ-093/100 follow-up).

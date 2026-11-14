@@ -24,7 +24,6 @@ import {
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { FreshnessBadge } from '@/components/ui/Badge';
-import { INITIAL_MARKET_OBSERVATIONS } from '@/lib/data/mockDatabase';
 import { calculateFarmProfit } from '@/lib/calculations/profit';
 
 export default function HomePage() {
@@ -251,15 +250,10 @@ export default function HomePage() {
             <span className="font-extrabold text-[#1BC447] uppercase tracking-wider text-[11px]">Commodity Telemetry:</span>
           </div>
           <div className="flex items-center gap-6 overflow-x-auto no-scrollbar py-1">
-            {INITIAL_MARKET_OBSERVATIONS.map((item) => (
-              <div key={item.id} className="flex items-center gap-2 shrink-0 text-white/90">
-                <span className="font-bold text-white">{item.cropName} ({item.marketName}):</span>
-                <span className="font-mono text-[#1BC447] font-extrabold tabular-nums">{item.price} {item.currency}/{item.unit}</span>
-                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                  item.priceChangePercent24h >= 0 ? 'bg-[#EDF6ED]/20 text-[#1BC447]' : 'bg-[#BA1A1A]/20 text-[#ffb4ab]'
-                }`}>
-                  {item.priceChangePercent24h >= 0 ? `+${item.priceChangePercent24h}%` : `${item.priceChangePercent24h}%`}
-                </span>
+            {['Official prices by region — live from the source', 'EU producer prices via Eurostat (latest published period)', 'No sample or simulated prices, ever'].map((item) => (
+              <div key={item} className="flex items-center gap-2 shrink-0 text-white/90">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1BC447] shrink-0" />
+                <span className="font-semibold">{item}</span>
               </div>
             ))}
           </div>
