@@ -34,6 +34,7 @@ const NAV_ITEMS = [
   { href: '/app/markets', label: 'Market Prices', icon: TrendingUp },
   { href: '/app/profit', label: 'Profit Calculator', icon: Calculator, badge: 'Tool' },
   { href: '/app/crop-advisor', label: 'Crop Advisor', icon: Compass },
+  { href: '/app/crop-path', label: 'CropPath Tracker', icon: Sprout, badge: 'Live' },
   { href: '/app/disease', label: 'Disease Scanner', icon: ScanLine },
   { href: '/app/weather', label: 'Agro Weather', icon: CloudSun },
   { href: '/app/farms', label: 'Farms & Plots', icon: Home },

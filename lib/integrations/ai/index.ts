@@ -14,6 +14,8 @@ import { getProviderConfig } from '../../services/assistant/config';
 const CLASSIFICATION_TIMEOUT_MS = 15_000;
 const GENERATION_TIMEOUT_MS = 120_000;
 const EMBEDDING_TIMEOUT_MS = 20_000;
+const VISION_TIMEOUT_MS = 90_000;
+const MAX_IMAGE_BYTES = 1_500_000;
 
 /** OpenAI-compatible gateway; override with AI_BASE_URL for other deployments. */
 export const DEFAULT_AI_BASE_URL = 'https://tokenharbor.ai/v1';
@@ -153,8 +155,73 @@ export async function generateAnswer(
   return text ? { text, modelUsed: status.generationModel } : null;
 }
 
-/* ------------------------------ Embeddings ------------------------------ */
+/* --------------------------- Vision (crop photos) --------------------------- */
 
+/**
+ * Crop photo analysis via an OpenAI-compatible multimodal model. The vision
+ * model is opt-in (AI_VISION_MODEL) because multimodal availability varies by
+ * gateway; callers must degrade honestly when this returns null.
+ */
+export async function analyzeCropPhotos(
+  images: string[],
+  cropName: string,
+  weekNumber: number,
+  stageLabel: string
+): Promise<GenerationResult | null> {
+  const status = describeProviderStatus();
+  if (!status.generationConfigured || !images.length) return null;
+  const visionModel = process.env.AI_VISION_MODEL?.trim() || 'mimo-v2.6-flash:free';
+
+  const safeImages = images
+    .filter((src) => /^data:image\/(jpeg|png|webp);/.test(src) && src.length <= MAX_IMAGE_BYTES)
+    .slice(0, 3);
+  if (!safeImages.length) return null;
+
+  const content: Array<Record<string, unknown>> = [
+    {
+      type: 'text',
+      text: `Crop: ${cropName}. Growth week ${weekNumber} (stage: ${stageLabel}). The farmer attached ${safeImages.length} photo(s) of the crop. Respond with ONLY a JSON object, no markdown fences, exactly these keys:
+{
+  "stage_match": "on_schedule" | "behind_1_week" | "behind_2_plus" | "ahead" | "uncertain",
+  "disease_signs": ["short observable sign", ...] (max 3, [] if none),
+  "nutrient_flags": ["possible deficiency pattern e.g. uniform yellowing", ...] (max 3, [] if none),
+  "severity": "none" | "early" | "moderate" | "severe",
+  "maturity_confirmed": true | false | null,
+  "notes": "max 60 words for the farmer"
+}
+Rules: base stage_match on visible plant structure vs the expected stage. Never suggest pesticide/fertilizer dosages, brand names, or treatment chemicals — disease/nutrient entries are observational only; if unsure use "uncertain" and empty arrays. Use null for maturity_confirmed unless clear maturity cues (dry foliage, filled grain/fruit color) are visible.`
+    },
+    ...safeImages.map((src) => ({ type: 'image_url', image_url: { url: src } }))
+  ];
+
+  const payload = {
+    model: visionModel,
+    max_tokens: 600,
+    temperature: 0.1,
+    messages: [
+      {
+        role: 'system' as const,
+        content: 'You are FarmIQ\u2019s crop photo analyst. Output plain text only; no citations, no invented data, no treatment dosages.'
+      },
+      { role: 'user' as const, content }
+    ]
+  };
+
+  let raw: unknown;
+  try {
+    raw = await chatCompletion(payload, VISION_TIMEOUT_MS);
+  } catch (err) {
+    // Free-tier gateways answer 503 while queueing — one quick retry, then fail.
+    const msg = err instanceof Error ? err.message : '';
+    if (!msg.includes('provider_error_503') && !msg.includes('service_busy')) throw err;
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+    raw = await chatCompletion(payload, VISION_TIMEOUT_MS);
+  }
+  const text = extractText(raw).trim();
+  return text ? { text: text.slice(0, 1200), modelUsed: visionModel } : null;
+}
+
+/* ------------------------------ Embeddings ------------------------------ */
 /**
  * Embeddings via the same OpenAI-compatible gateway. Only called when
  * AI_EMBEDDING_MODEL is explicitly configured; otherwise retrieval stays on the

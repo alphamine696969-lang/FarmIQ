@@ -283,6 +283,15 @@ export default function DashboardPage() {
                 <span>Crop Suitability</span>
               </Link>
               <Link
+                href="/app/crop-path"
+                className="p-3.5 rounded-2xl bg-[#EDF6ED] hover:bg-white text-center text-xs font-bold text-[#1C2922] border border-[#DCE5DC] hover:border-[#1BC447]/60 shadow-xs transition-smooth flex flex-col items-center gap-2"
+              >
+                <div className="w-8 h-8 rounded-xl bg-white text-[#153D2B] flex items-center justify-center border border-[#DCE5DC]">
+                  <Sprout className="w-4 h-4 text-[#1BC447]" />
+                </div>
+                <span>CropPath Tracker</span>
+              </Link>
+              <Link
                 href="/app/markets"
                 className="p-3.5 rounded-2xl bg-[#EDF6ED] hover:bg-white text-center text-xs font-bold text-[#1C2922] border border-[#DCE5DC] hover:border-[#1BC447]/60 shadow-xs transition-smooth flex flex-col items-center gap-2"
               >

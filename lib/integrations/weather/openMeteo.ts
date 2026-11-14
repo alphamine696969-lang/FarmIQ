@@ -1,0 +1,289 @@
+/**
+ * FarmIQ Open-Meteo live weather adapter (FIQ-092).
+ * Keyless, free-tier friendly live forecast provider. Server-side only.
+ * Both hosts are hardcoded allowlist entries — user text is only ever sent
+ * as an encoded query parameter, never as a URL (SSRF-safe by construction).
+ */
+
+const GEOCODING_HOST = 'https://geocoding-api.open-meteo.com/v1/search';
+const PHOTON_HOST = 'https://photon.komoot.io/api';
+const FORECAST_HOST = 'https://api.open-meteo.com/v1/forecast';
+const TIMEOUT_MS = 12_000;
+
+export interface GeoLocation {
+  name: string;
+  admin1?: string;
+  country?: string;
+  countryCode?: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface OpenMeteoDaily {
+  date: string;
+  tempMaxC: number;
+  tempMinC: number;
+  precipitationMm: number;
+  precipitationChancePct: number | null;
+  humidityPct: number | null;
+  windMaxKmh: number | null;
+  et0Mm: number | null;
+  uvIndexMax: number | null;
+  weatherCode: number | null;
+}
+
+export interface OpenMeteoSnapshot {
+  latitude: number;
+  longitude: number;
+  timezone: string;
+  currentTempC: number | null;
+  currentHumidityPct: number | null;
+  daily: OpenMeteoDaily[];
+  retrievedAt: string;
+}
+
+async function fetchJson(url: string): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      throw new Error(`open_meteo_error_${response.status}: ${detail.slice(0, 160)}`);
+    }
+    return await response.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * A geocoder answer is only accepted when every significant token (≥3 chars,
+ * minus qualifier words like "district"/"village") appears in the answer.
+ * "any token" is too weak — a garbage query shares "nowhere" with a real US
+ * town; "all tokens" lets "District Nashik" still match "Nashik".
+ */
+const QUERY_STOPWORDS = new Set(['district', 'division', 'block', 'tehsil', 'state', 'region', 'sector', 'taluka', 'near', 'village', 'town', 'city', 'of', 'the']);
+
+function sharesQueryToken(query: string, candidates: Array<string | undefined>): boolean {
+  const tokens = query
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length >= 3 && !QUERY_STOPWORDS.has(t));
+  if (!tokens.length) return false;
+  const haystack = candidates.filter(Boolean).join(' ').toLowerCase();
+  return tokens.every((t) => haystack.includes(t));
+}
+
+export async function geocodeLocation(query: string): Promise<GeoLocation | null> {
+  const q = query.trim();
+  if (!q) return null;
+  // Open-Meteo omits `results` entirely when it finds nothing, so an empty
+  // answer is never conclusive — always let Photon (OSM) try before failing.
+  try {
+    const url = `${GEOCODING_HOST}?name=${encodeURIComponent(q)}&count=1&language=en&format=json`;
+    const payload = await fetchJson(url);
+    const results =
+      typeof payload === 'object' && payload !== null && Array.isArray((payload as Record<string, unknown>).results)
+        ? ((payload as Record<string, unknown>).results as unknown[])
+        : [];
+    const parsed = parseOpenMeteoGeo(results, q);
+    if (parsed) return parsed;
+  } catch {
+    // Network-level failure — Photon is the fallback either way.
+  }
+  return geocodeWithPhoton(q);
+}
+
+function parseOpenMeteoGeo(results: unknown[], query: string): GeoLocation | null {
+  if (results.length === 0) return null;
+  const first = results[0];
+  if (typeof first !== 'object' || first === null) return null;
+  const rec = first as Record<string, unknown>;
+  if (typeof rec.latitude !== 'number' || typeof rec.longitude !== 'number' || typeof rec.name !== 'string') return null;
+  if (!sharesQueryToken(query, [rec.name, typeof rec.admin1 === 'string' ? rec.admin1 : undefined, typeof rec.country === 'string' ? rec.country : undefined])) {
+    return null;
+  }
+  return {
+    name: rec.name,
+    admin1: typeof rec.admin1 === 'string' ? rec.admin1 : undefined,
+    country: typeof rec.country === 'string' ? rec.country : undefined,
+    countryCode: typeof rec.country_code === 'string' ? rec.country_code.toUpperCase() : undefined,
+    latitude: rec.latitude,
+    longitude: rec.longitude
+  };
+}
+
+async function geocodeWithPhoton(q: string): Promise<GeoLocation | null> {
+  try {
+    const payload = await fetchJson(`${PHOTON_HOST}/?q=${encodeURIComponent(q)}&limit=1`);
+    if (typeof payload !== 'object' || payload === null) return null;
+    const features = (payload as Record<string, unknown>).features;
+    if (!Array.isArray(features) || features.length === 0) return null;
+    const feature = features[0];
+    if (typeof feature !== 'object' || feature === null) return null;
+    const rec = feature as Record<string, unknown>;
+    const geometry = rec.geometry;
+    const properties = rec.properties;
+    if (typeof geometry !== 'object' || geometry === null || typeof properties !== 'object' || properties === null) return null;
+    const coords = (geometry as Record<string, unknown>).coordinates;
+    const props = properties as Record<string, unknown>;
+    if (!Array.isArray(coords) || coords.length < 2) return null;
+    const [lon, lat] = coords as unknown[];
+    if (typeof lat !== 'number' || typeof lon !== 'number') return null;
+    // Photon fuzzy-matches POIs (shops, addresses) on garbage queries — never
+    // accept those, or a farmer's village gets weather for a random shop.
+    const osmKey = typeof props.osm_key === 'string' ? props.osm_key : '';
+    if (osmKey !== 'place' && osmKey !== 'boundary') return null;
+    const name = typeof props.name === 'string' ? props.name : typeof props.city === 'string' ? props.city : q;
+    if (!sharesQueryToken(q, [name, typeof props.city === 'string' ? props.city : undefined, typeof props.state === 'string' ? props.state : undefined, typeof props.country === 'string' ? props.country : undefined])) {
+      return null;
+    }
+    return {
+      name,
+      admin1: typeof props.state === 'string' ? props.state : undefined,
+      country: typeof props.country === 'string' ? props.country : undefined,
+      countryCode: typeof props.countrycode === 'string' ? props.countrycode.toUpperCase() : undefined,
+      latitude: lat,
+      longitude: lon
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Place suggestions for the type-ahead picker. Unlike geocodeLocation there
+ * is no token guard: fuzzy candidates are fine because the farmer picks the
+ * right one from the list (that selection is what fixes "wrong place").
+ * Photon results are still restricted to places/boundaries (no shops).
+ */
+export async function searchPlaces(query: string, limit = 5): Promise<GeoLocation[]> {
+  const q = query.trim();
+  if (q.length < 3) return [];
+  const out: GeoLocation[] = [];
+
+  try {
+    const payload = await fetchJson(`${GEOCODING_HOST}?name=${encodeURIComponent(q)}&count=${limit}&language=en&format=json`);
+    const results =
+      typeof payload === 'object' && payload !== null && Array.isArray((payload as Record<string, unknown>).results)
+        ? ((payload as Record<string, unknown>).results as unknown[])
+        : [];
+    for (const item of results) {
+      if (typeof item !== 'object' || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      if (typeof rec.latitude !== 'number' || typeof rec.longitude !== 'number' || typeof rec.name !== 'string') continue;
+      out.push({
+        name: rec.name,
+        admin1: typeof rec.admin1 === 'string' ? rec.admin1 : undefined,
+        country: typeof rec.country === 'string' ? rec.country : undefined,
+        countryCode: typeof rec.country_code === 'string' ? rec.country_code.toUpperCase() : undefined,
+        latitude: rec.latitude,
+        longitude: rec.longitude
+      });
+      if (out.length >= limit) break;
+    }
+  } catch {
+    // fall through to Photon
+  }
+
+  if (out.length < limit) {
+    try {
+      const payload = await fetchJson(`${PHOTON_HOST}/?q=${encodeURIComponent(q)}&limit=${limit}`);
+      const features =
+        typeof payload === 'object' && payload !== null && Array.isArray((payload as Record<string, unknown>).features)
+          ? ((payload as Record<string, unknown>).features as unknown[])
+          : [];
+      for (const item of features) {
+        if (out.length >= limit) break;
+        if (typeof item !== 'object' || item === null) continue;
+        const rec = item as Record<string, unknown>;
+        const geometry = rec.geometry;
+        const properties = rec.properties;
+        if (typeof geometry !== 'object' || geometry === null || typeof properties !== 'object' || properties === null) continue;
+        const coords = (geometry as Record<string, unknown>).coordinates;
+        const props = properties as Record<string, unknown>;
+        if (!Array.isArray(coords) || coords.length < 2) continue;
+        const [lon, lat] = coords as unknown[];
+        if (typeof lat !== 'number' || typeof lon !== 'number') continue;
+        const osmKey = typeof props.osm_key === 'string' ? props.osm_key : '';
+        if (osmKey !== 'place' && osmKey !== 'boundary') continue;
+        const name = typeof props.name === 'string' ? props.name : typeof props.city === 'string' ? props.city : undefined;
+        if (!name) continue;
+        const dup = out.some(
+          (o) => o.name === name && Math.abs(o.latitude - lat) < 0.01 && Math.abs(o.longitude - lon) < 0.01
+        );
+        if (dup) continue;
+        out.push({
+          name,
+          admin1: typeof props.state === 'string' ? props.state : typeof props.county === 'string' ? props.county : undefined,
+          country: typeof props.country === 'string' ? props.country : undefined,
+          countryCode: typeof props.countrycode === 'string' ? props.countrycode.toUpperCase() : undefined,
+          latitude: lat,
+          longitude: lon
+        });
+      }
+    } catch {
+      // suggestions degrade to whatever we have
+    }
+  }
+
+  return out.slice(0, limit);
+}
+
+function num(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+export async function fetchOpenMeteoForecast(lat: number, lon: number, days = 7): Promise<OpenMeteoSnapshot> {
+  const params = new URLSearchParams({
+    latitude: String(lat),
+    longitude: String(lon),
+    current: 'temperature_2m,relative_humidity_2m',
+    daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,relative_humidity_2m_mean,wind_speed_10m_max,et0_fao_evapotranspiration,uv_index_max,weather_code',
+    forecast_days: String(Math.min(16, Math.max(1, days))),
+    timezone: 'auto'
+  });
+  const payload = await fetchJson(`${FORECAST_HOST}?${params.toString()}`);
+  if (typeof payload !== 'object' || payload === null) {
+    throw new Error('open_meteo_error: malformed payload');
+  }
+  const rec = payload as Record<string, unknown>;
+  const daily = rec.daily;
+  const current = rec.current;
+  if (typeof daily !== 'object' || daily === null || !Array.isArray((daily as Record<string, unknown>).time)) {
+    throw new Error('open_meteo_error: missing daily arrays');
+  }
+  const d = daily as Record<string, unknown>;
+  const times = d.time as unknown[];
+  const dayList: OpenMeteoDaily[] = [];
+  for (let i = 0; i < times.length; i += 1) {
+    if (typeof times[i] !== 'string') continue;
+    dayList.push({
+      date: times[i] as string,
+      tempMaxC: num((d.temperature_2m_max as unknown[])?.[i]) ?? NaN,
+      tempMinC: num((d.temperature_2m_min as unknown[])?.[i]) ?? NaN,
+      precipitationMm: num((d.precipitation_sum as unknown[])?.[i]) ?? NaN,
+      precipitationChancePct: num((d.precipitation_probability_max as unknown[])?.[i]),
+      humidityPct: num((d.relative_humidity_2m_mean as unknown[])?.[i]),
+      windMaxKmh: num((d.wind_speed_10m_max as unknown[])?.[i]),
+      et0Mm: num((d.et0_fao_evapotranspiration as unknown[])?.[i]),
+      uvIndexMax: num((d.uv_index_max as unknown[])?.[i]),
+      weatherCode: num((d.weather_code as unknown[])?.[i])
+    });
+  }
+  if (dayList.length === 0) throw new Error('open_meteo_error: no usable forecast days');
+
+  const currentTemp = current && typeof current === 'object' ? num((current as Record<string, unknown>).temperature_2m) : null;
+  const currentHumidity = current && typeof current === 'object' ? num((current as Record<string, unknown>).relative_humidity_2m) : null;
+
+  return {
+    latitude: typeof rec.latitude === 'number' ? rec.latitude : lat,
+    longitude: typeof rec.longitude === 'number' ? rec.longitude : lon,
+    timezone: typeof rec.timezone === 'string' ? rec.timezone : 'auto',
+    currentTempC: currentTemp,
+    currentHumidityPct: currentHumidity,
+    daily: dayList,
+    retrievedAt: new Date().toISOString()
+  };
+}

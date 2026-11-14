@@ -8,7 +8,7 @@
 export interface ProfitCalculationInput {
   cropName: string;
   areaValue: number;
-  areaUnit: 'acre' | 'hectare';
+  areaUnit: 'acre' | 'hectare' | 'bigha';
   expectedYieldPerUnitArea: number; // e.g. metric tonnes or quintals per acre/ha
   yieldUnit: string; // e.g., 'tonnes', 'quintals', 'kg', 'bushels'
   expectedPricePerYieldUnit: number;

@@ -35,7 +35,7 @@ export default function ProfitPage() {
   // Form input state
   const [cropName, setCropName] = useState('Hard Red Winter Wheat');
   const [areaValue, setAreaValue] = useState(45);
-  const [areaUnit, setAreaUnit] = useState<'acre' | 'hectare'>('acre');
+  const [areaUnit, setAreaUnit] = useState<'acre' | 'hectare' | 'bigha'>('acre');
   const [expectedYield, setExpectedYield] = useState(2.4);
   const [yieldUnit, setYieldUnit] = useState('tonnes');
   const [expectedPrice, setExpectedPrice] = useState(250);
