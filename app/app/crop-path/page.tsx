@@ -1842,34 +1842,75 @@ export default function CropPathPage() {
                 </div>
               )}
 
-              {/* All weeks */}
+              {/* Full roadmap */}
               <div className="bg-white p-6 rounded-3xl border border-[#DCE5DC] shadow-bento space-y-3">
-                <button onClick={() => setShowAllWeeks(!showAllWeeks)} className="flex items-center justify-between w-full">
-                  <h3 className="text-sm font-extrabold text-[#1C2922]">Full roadmap ({t.totalWeeks} weeks)</h3>
-                  {showAllWeeks ? <ChevronUp className="w-4 h-4 text-[#3D4A3B]" /> : <ChevronDown className="w-4 h-4 text-[#3D4A3B]" />}
+                <button
+                  type="button"
+                  aria-expanded={showAllWeeks}
+                  onClick={() => setShowAllWeeks((open) => !open)}
+                  className="w-full flex items-center justify-between gap-3 px-1 py-2 rounded-xl hover:bg-[#F3FCF3] transition-smooth"
+                >
+                  <h3 className="text-sm font-extrabold text-[#1C2922] text-left">
+                    Full roadmap ({t.totalWeeks} weeks, {t.stages.length} stages)
+                    <span className="block text-[10px] font-medium text-[#3D4A3B] mt-0.5">
+                      {showAllWeeks ? 'Tap a week to collapse the list' : 'Open the complete sowing-to-harvest plan'}
+                    </span>
+                  </h3>
+                  {showAllWeeks ? <ChevronUp className="w-4 h-4 text-[#3D4A3B] shrink-0" /> : <ChevronDown className="w-4 h-4 text-[#3D4A3B] shrink-0" />}
                 </button>
                 {showAllWeeks && (
                   <div className="space-y-2">
-                    {t.roadmap.map((w) => (
-                      <button
-                        key={w.weekNumber}
-                        onClick={() => setShowWeekDetail(showWeekDetail === w.weekNumber ? null : w.weekNumber)}
-                        className={`w-full text-left px-4 py-3 rounded-2xl border transition-smooth ${
-                          w.weekNumber === week ? 'bg-[#EDF6ED] border-[#1BC447]/40' : 'bg-[#F3FCF3]/50 border-[#DCE5DC] hover:bg-[#F3FCF3]'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs font-extrabold text-[#1C2922]">Week {w.weekNumber} — {w.stageLabel}</p>
-                          {w.weekNumber === week && <span className="text-[10px] font-extrabold text-[#153D2B]">current</span>}
-                        </div>
-                        {showWeekDetail === w.weekNumber && (
-                          <div className="mt-2 space-y-1.5 text-[11px]">
-                            <p className="text-[#3D4A3B] font-medium"><span className="font-extrabold text-[#153D2B]">Expect:</span> {w.expected}</p>
-                            {w.actions.map((a, i) => <p key={i} className="text-[#3D4A3B] font-medium">• {a}</p>)}
+                    {t.roadmap.map((w) => {
+                      const isCurrent = w.weekNumber === week;
+                      const isPast = w.weekNumber < week;
+                      return (
+                        <div
+                          key={w.weekNumber}
+                          className={`px-4 py-3 rounded-2xl border transition-smooth ${
+                            isCurrent
+                              ? 'bg-[#EDF6ED] border-[#1BC447]/50'
+                              : isPast
+                                ? 'bg-white border-[#DCE5DC] opacity-70'
+                                : 'bg-[#F3FCF3]/50 border-[#DCE5DC]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs font-extrabold text-[#1C2922]">
+                              Week {w.weekNumber} — {w.stageLabel}
+                              {isPast && <span className="ml-2 text-[10px] font-bold text-[#3D4A3B]">done</span>}
+                            </p>
+                            {isCurrent && <span className="text-[10px] font-extrabold text-[#153D2B]">current</span>}
                           </div>
-                        )}
-                      </button>
-                    ))}
+                          <p className="text-[11px] text-[#3D4A3B] font-medium mt-1.5">
+                            <span className="font-extrabold text-[#153D2B]">Expect:</span> {w.expected}
+                          </p>
+                          <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                            <div className="bg-white rounded-xl border border-[#DCE5DC] p-2.5">
+                              <p className="font-extrabold text-[#153D2B] mb-0.5 text-[10px]">🧪 Fertilizer</p>
+                              <p className="text-[#3D4A3B] font-medium">{w.fertilizerTask || 'Per soil test and local extension guidance.'}</p>
+                            </div>
+                            <div className="bg-white rounded-xl border border-[#DCE5DC] p-2.5">
+                              <p className="font-extrabold text-[#153D2B] mb-0.5 text-[10px]">💧 Irrigation</p>
+                              <p className="text-[#3D4A3B] font-medium">{w.irrigationTask || 'Follow your irrigation schedule.'}</p>
+                            </div>
+                            <div className="bg-white rounded-xl border border-[#DCE5DC] p-2.5">
+                              <p className="font-extrabold text-[#153D2B] mb-0.5 text-[10px]">🔍 Scouting</p>
+                              <p className="text-[#3D4A3B] font-medium">{w.scoutingTask || 'Scout the crop and note anything unusual.'}</p>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {w.actions.map((a, i) => (
+                              <span key={i} className="text-[10px] px-2.5 py-1 rounded-full bg-white border border-[#DCE5DC] text-[#3D4A3B] font-medium">{a}</span>
+                            ))}
+                          </div>
+                          <div className="mt-2 space-y-0.5">
+                            {w.reminders.map((r, i) => (
+                              <p key={i} className="text-[10px] text-[#3D4A3B] font-medium flex items-center gap-1.5"><Droplets className="w-3 h-3 text-[#1BC447] shrink-0" />{r}</p>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
