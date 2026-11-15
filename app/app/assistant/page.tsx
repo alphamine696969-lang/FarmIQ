@@ -11,26 +11,44 @@ export default function AssistantPage() {
     'North field',
     'South field'
   ]);
-  const [userName, setUserName] = useState<string>('Parth');
+  const [userName, setUserName] = useState<string>('');
 
   useEffect(() => {
+    // 1. Read stored local profile
     const profile = getStoredUserProfile();
     if (profile?.displayName && profile.displayName !== 'Farmer') {
-      setUserName(profile.displayName.split(' ')[0]);
+      const first = profile.displayName.trim().split(/\s+/)[0];
+      if (first) setUserName(first);
     }
     if (profile?.farms && profile.farms.length > 0) {
       const fieldNames = ['All fields', ...profile.farms.map((f) => f.name)];
       setFields(fieldNames);
     }
+
+    // 2. Fetch authenticated session (e.g. Google user "Alpha1" or customized profile)
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated && data.user) {
+          const rawName = data.user.name || data.user.given_name || profile?.displayName;
+          if (rawName && rawName !== 'Farmer') {
+            const first = rawName.trim().split(/\s+/)[0];
+            if (first) setUserName(first);
+          }
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  const greeting = userName ? `What’s growing today, ${userName}?` : 'What’s growing today?';
 
   return (
     <AppShell>
-      <div className="min-h-[calc(100dvh-100px)] sm:h-[calc(100vh-130px)] w-full flex flex-col justify-between -mt-2">
+      <div className="h-[calc(100dvh-75px)] md:h-[calc(100vh-85px)] w-full flex flex-col justify-between">
         <ChatPage
           apiUrl="/api/chat"
           fields={fields}
-          title={`What’s growing today, ${userName}?`}
+          title={greeting}
           suggestions={[
             '🌦️ Will it rain this week?',
             '🔬 Why are my tomato leaves yellowing?',
