@@ -1,0 +1,20 @@
+/* Farm IQ typing indicator: three leaves unfurl in a wave (dark -> mid -> lime, like the logo's furrows). Size with font-size. */
+.fiq-typing{--dk:var(--fl-dk,#1f6a0a);--mid:var(--fl-mid,#3f9411);--lm:var(--fl-lm,#7ab800);display:inline-flex;align-items:flex-end;gap:.4em;font-size:20px;height:1.1em;padding:0 .1em}
+.fiq-typing i{display:block;width:.62em;height:.62em;border-radius:0 100% 0 100%;transform-origin:100% 100%;animation:fiq-t 1.5s cubic-bezier(.3,.7,.2,1) infinite both}
+.fiq-typing i:nth-child(1){background:var(--dk)}
+.fiq-typing i:nth-child(2){background:var(--mid);animation-delay:.16s}
+.fiq-typing i:nth-child(3){background:var(--lm);animation-delay:.32s}
+@keyframes fiq-t{
+ 0%,12%{transform:scale(.35) rotate(-24deg);opacity:.45}
+ 34%{transform:scale(1) rotate(0);opacity:1}
+ 46%{transform:scale(1.07)}
+ 56%,74%{transform:scale(1);opacity:1}
+ 100%{transform:scale(.35) rotate(-24deg);opacity:.45}}
+/* streamed reply: each word eases in */
+.fiq-w{display:inline-block;opacity:0;transform:translateY(4px);animation:fiq-w .3s ease-out forwards}
+@keyframes fiq-w{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+ .fiq-typing i{animation:fiq-p 1.4s ease-in-out infinite;transform:none}
+ .fiq-typing i:nth-child(2){animation-delay:.2s}.fiq-typing i:nth-child(3){animation-delay:.4s}
+ .fiq-w{animation:none;opacity:1;transform:none}}
+@keyframes fiq-p{50%{opacity:.35}}
