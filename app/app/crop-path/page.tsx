@@ -910,7 +910,6 @@ export default function CropPathPage() {
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h2 className="text-xl font-extrabold tracking-tight text-[#1C2922]">CropPath Tracker</h2>
-                <FreshnessBadge status="live" label="Live weather + official prices" />
               </div>
               <p className="text-xs text-[#3D4A3B] mt-0.5 font-medium">
                 One crop. One field. A week-by-week plan from sowing to sale.
