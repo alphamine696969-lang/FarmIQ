@@ -26,7 +26,7 @@ export default function AppChatPage() {
 
   return (
     <AppShell>
-      <div className="h-[calc(100vh-130px)] w-full flex flex-col justify-between -mt-2">
+      <div className="min-h-[calc(100dvh-100px)] sm:h-[calc(100vh-130px)] w-full flex flex-col justify-between -mt-2">
         <ChatPage
           apiUrl="/api/chat"
           fields={fields}

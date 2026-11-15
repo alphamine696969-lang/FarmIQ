@@ -976,10 +976,229 @@ textarea::placeholder {
   }
 }
 
-@media (max-width: 480px) {
+/* ========================================================================== */
+/* Mobile Optimizations (Responsive Layout for Small Screens)                 */
+/* ========================================================================== */
+
+@media (max-width: 640px) {
+  .app {
+    padding: 0 4px;
+    max-width: 100%;
+  }
+
+  /* In empty state, adapt height so the whole hero fits naturally without scrolling */
+  .app.is-empty {
+    min-height: auto;
+    padding: 6px 2px 14px;
+    justify-content: flex-start;
+  }
+
+  .app.is-empty .hero {
+    margin: 2px auto 8px;
+    padding: 2px 0 4px;
+    gap: 5px;
+  }
+
+  .hero-badge {
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+    margin-bottom: 0px;
+  }
+
+  .hero-badge .fl {
+    font-size: 24px !important;
+  }
+
+  .hero h1 {
+    font-size: clamp(20px, 5.2vw, 24px);
+    line-height: 1.25;
+    padding: 0 6px;
+  }
+
+  .hero-sub {
+    font-size: 12px;
+    line-height: 1.35;
+    padding: 0 10px;
+    margin: 0;
+    max-width: 320px;
+  }
+
+  .app.is-empty .dock {
+    max-width: 100%;
+  }
+
+  .composer {
+    border-radius: 20px;
+    padding: 10px 12px 8px;
+  }
+
+  textarea {
+    font-size: 14.5px;
+    min-height: 38px;
+    padding: 2px 2px;
+    line-height: 1.45;
+  }
+
+  .tools {
+    margin-top: 6px;
+    padding-top: 6px;
+    gap: 4px;
+  }
+
+  .ic {
+    width: 32px;
+    height: 32px;
+  }
+
+  .ic .i {
+    width: 16px;
+    height: 16px;
+  }
+
+  .seg {
+    padding: 2px;
+    border-radius: 10px;
+    gap: 1px;
+  }
+
+  .seg button {
+    height: 28px;
+    padding: 0 7px;
+    font-size: 11.5px;
+    border-radius: 8px;
+    gap: 3px;
+  }
+
+  .seg button .i {
+    width: 13px;
+    height: 13px;
+  }
+
+  .ctx {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 11.5px;
+    max-width: 100px;
+    border-radius: 10px;
+    gap: 4px;
+  }
+
+  .ctx .i {
+    width: 13px;
+    height: 13px;
+  }
+
+  .act {
+    width: 34px;
+    height: 34px;
+  }
+
+  .act .i {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Sub-bar on mobile: Hide redundant field picker, center verified badge cleanly */
+  .composer-sub-bar {
+    justify-content: center;
+    padding: 6px 4px 2px;
+  }
+
+  .sub-bar-left {
+    display: none;
+  }
+
+  .rag-badge {
+    font-size: 11.5px;
+    justify-content: center;
+  }
+
+  /* Suggestion pills on mobile: Horizontal swipeable carousel */
+  .sugs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-start;
+    width: 100%;
+    padding: 6px 4px 10px;
+    margin-top: 6px;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .sugs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sug {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 12.5px;
+    padding: 6px 12px;
+    min-height: 34px;
+    border-radius: 999px;
+  }
+
+  .fine {
+    font-size: 10px;
+    margin-top: 4px;
+  }
+
+  /* Chatting View on mobile */
+  .row {
+    max-width: 96%;
+  }
+
+  .row.bot {
+    gap: 8px;
+  }
+
+  .bot-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    margin-top: 2px;
+  }
+
+  .bot-avatar .fl {
+    font-size: 15px !important;
+  }
+
+  .bub {
+    padding: 12px 14px;
+    font-size: 14px;
+    border-radius: 16px 16px 16px 4px;
+  }
+
+  .me .bub {
+    padding: 10px 14px;
+    font-size: 14px;
+    border-radius: 16px 16px 4px 16px;
+  }
+
+  .fiq-h4 {
+    font-size: 14px;
+    margin: 10px 0 4px 0;
+  }
+
+  .fiq-list, .fiq-num-list {
+    padding-left: 16px;
+    gap: 4px;
+  }
+
+  .fiq-advisory {
+    padding: 10px 12px;
+    font-size: 12.5px;
+  }
+}
+
+@media (max-width: 400px) {
   .seg button span { display: none; }
-  .seg button { padding: 0 10px; }
-  .ctx { max-width: 110px; }
+  .seg button { padding: 0 8px; }
+  .ctx { max-width: 85px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
