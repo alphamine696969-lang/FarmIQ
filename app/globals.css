@@ -124,8 +124,8 @@ html, body, #__next {
     transition-duration: 80ms;
   }
 
-  /* Keyboard focus rings — always visible, always on-brand */
-  :focus-visible {
+  /* Keyboard focus rings — always visible on clickable elements, excluded for textareas and text inputs */
+  :focus-visible:not(input):not(textarea):not([contenteditable="true"]) {
     outline: 2px solid #1BC447;
     outline-offset: 3px;
     border-radius: 6px;

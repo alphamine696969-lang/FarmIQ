@@ -303,18 +303,30 @@ html, body {
   box-shadow: 0 0 0 3.5px rgba(27, 196, 71, 0.18), 0 20px 44px -8px rgba(21, 61, 43, 0.1);
 }
 
-.field {
+.field,
+.field:focus,
+.field:focus-visible,
+.field:focus-within {
   position: relative;
   padding: 2px 4px 0;
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
-textarea {
+textarea,
+textarea:focus,
+textarea:focus-visible,
+.field textarea,
+.field textarea:focus,
+.field textarea:focus-visible {
   display: block;
   width: 100%;
   box-sizing: border-box;
   resize: none;
-  border: 0;
-  outline: 0;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
   background: transparent;
   color: #1C2922;
   font-family: inherit;
@@ -324,6 +336,7 @@ textarea {
   min-height: 48px;
   padding: 4px 6px;
   overflow-y: auto;
+  -webkit-appearance: none;
 }
 
 textarea::placeholder {
