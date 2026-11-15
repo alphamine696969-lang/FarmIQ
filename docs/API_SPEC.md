@@ -22,13 +22,14 @@ Provider failures never return 500 for upstream issues — they degrade to `data
 | GET | `/api/health` | Non-sensitive health check (status, trust flags) | None |
 | POST | `/api/profit/calculate` | Deterministic profit / break-even calculation | None |
 | POST | `/api/markets/prices` | Region-based **official** crop prices: resolves place/GPS → country, returns Eurostat producer prices (latest published period) or an honest not-covered state; never serves sample data | Eurostat `apri_ap_crpouta`, Open-Meteo geocoding, Photon reverse |
+| POST | `/api/markets/news` | Latest agriculture/market **web-research** news for a location (place/GPS/label); keyless Bing News RSS + Wikipedia, recency-biased; honest `empty` / `web_research_disabled` states — never fake headlines | Keyless web research (ADR-019) |
 | GET | `/api/weather/current` | Current agro-weather snapshot (**sample data, labeled**) | None |
 
 ### AI assistant
 
 | Method | Path | Purpose | External dependencies |
 |---|---|---|---|
-| POST | `/api/assistant/chat` | Full 7-layer chatbot pipeline (guard → classify → retrieve → assemble → generate → output-guard → log); `maxDuration: 180` | TokenHarbor gateway (`AI_API_KEY`) |
+| POST | `/api/assistant/chat` | Full 7-layer chatbot pipeline (guard → classify → retrieve → assemble → generate → output-guard → log); the generation model can research first via **`web_search`/`web_fetch` tools** (model-initiated, keyless); retrieval: pgvector → offline crop/disease profiles; `maxDuration: 180` | TokenHarbor gateway (`AI_API_KEY`), keyless web research (ADR-019) |
 
 Request: `{ "message": string, "history"?: Turn[], "userId"?: string }` → response includes `answer, intent, sources[], followUps, evidenceStatus, limitations, warnings, blocked, providerConfigured` + `meta.modelUsed`.
 
@@ -48,7 +49,7 @@ Request: `{ "message": string, "history"?: Turn[], "userId"?: string }` → resp
 
 | Method | Path | Purpose | External dependencies |
 |---|---|---|---|
-| POST | `/api/disease/analyze` | AI disease analysis of a named plant's photos: plant ID + match check, growing conditions, disease + cause, severity, recovery/prevention steps, official sources allowlisted from `APPROVED_SOURCES` (model picks ids, URLs mapped server-side); raster-only ≤3 images, 6 MB cap, `maxDuration: 120`; honest `fallback: true` | TokenHarbor gateway (`AI_VISION_MODEL`) |
+| POST | `/api/disease/analyze` | AI disease analysis of a named plant's photos: plant ID + match check, growing conditions, disease + cause, severity, recovery/prevention steps, official sources allowlisted from `APPROVED_SOURCES` (model picks ids, URLs mapped server-side); enriched with keyless web-research references for the plant; raster-only ≤3 images, 6 MB cap, `maxDuration: 120`; honest `fallback: true` | TokenHarbor gateway (`AI_VISION_MODEL`), keyless web research |
 | POST | `/api/crop-advisor/context` | Observed 90-day climate (mean temperature, precipitation total) + SoilGrids soil (texture class + pH) for a location; each field degrades to `null` + reason | Open-Meteo Forecast (`past_days=90`), ISRIC SoilGrids |
 
 ```jsonc
@@ -115,6 +116,7 @@ Set in `.env.local` (local) and **Vercel → Project → Settings → Environmen
 | `AI_VISION_MODEL` | Optional | Photo analysis model (default `mimo-v2.6-flash:free`) | Uses default |
 | `AI_EMBEDDING_MODEL` | Optional | Opt-in embeddings for pgvector retrieval | Local lexical retrieval |
 | `GOOGLE_TRANSLATE_API_KEY` | Optional | Google Translate v2 translation | Translation limitation disclosed |
+| `WEB_FETCH_DISABLED` | Optional | Set to `1` to disable all web research tools (`web_search`/`web_fetch`) — offline test runs | Web tools off; honest disabled messages |
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` | Pending FIQ-020 | Database, auth, storage, pgvector migration | localStorage persistence, no account sync |
 | `WEATHER_API_KEY`, `MARKET_DATA_API_KEY`, `MAPS_API_KEY`, `EXCHANGE_RATE_API_KEY` | Not used yet | Reserved for future providers | — |
 

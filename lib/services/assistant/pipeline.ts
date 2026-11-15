@@ -77,7 +77,8 @@ function blockedResult(params: {
       generation: getProviderConfig().generation,
       embeddings: getProviderConfig().embeddings,
       translation: isTranslationConfigured(),
-      retrieval: getProviderConfig().retrieval
+      retrieval: getProviderConfig().retrieval,
+      webSearch: getProviderConfig().webSearch
     },
     log
   };
@@ -113,7 +114,8 @@ export async function runChatPipeline(body: AssistantChatRequestBody): Promise<P
     generation: config.generation,
     embeddings: config.embeddings,
     translation: isTranslationConfigured(),
-    retrieval: config.retrieval
+    retrieval: config.retrieval,
+    webSearch: config.webSearch
   };
 
   const latency = () => Date.now() - startedAt;
@@ -232,6 +234,7 @@ export async function runChatPipeline(body: AssistantChatRequestBody): Promise<P
   // Layer 5 — Output Guard
   const validation = validateOutput(generation.answer);
   let answer = generation.answer;
+  const researchItems = generation.research ?? [];
   let evidenceStatus: PipelineResult['evidenceStatus'];
   if (!validation.valid) {
     answer = INSUFFICIENT_EVIDENCE_RESPONSE;
@@ -241,11 +244,12 @@ export async function runChatPipeline(body: AssistantChatRequestBody): Promise<P
       ? retrieval.chunks[0].similarity >= 0.85
         ? 'supported'
         : 'partial'
-      : // Local index answers are honest partial evidence until pgvector is live.
+      : // Offline crop/disease profile answers stay honest partial evidence.
         'partial';
   } else if (generation.method === 'llm_generation') {
-    // Live general-knowledge answer: real-time model output, but no
-    // knowledge-base evidence behind it — never claim more than partial.
+    // Live answer: real-time model output — grounded in web research the model
+    // actually performed (ADR-019), or general farming knowledge without it.
+    // Never claim more than partial without knowledge-base evidence.
     evidenceStatus = 'partial';
   } else {
     evidenceStatus = 'insufficient';
@@ -268,8 +272,21 @@ export async function runChatPipeline(body: AssistantChatRequestBody): Promise<P
     }
   }
 
-  // Sources, follow-ups, limitations, warnings
+  // Sources, follow-ups, limitations, warnings.
+  // Knowledge-base cards first, then real pages the model researched (deduped
+  // by URL) — research items are actual fetched results, never invented.
   const sources = buildSources(retrieval.chunks);
+  const seenUrls = new Set(sources.map((s) => s.url).filter(Boolean));
+  for (const item of researchItems) {
+    if (seenUrls.has(item.url)) continue;
+    seenUrls.add(item.url);
+    sources.push({
+      sourceLabel: item.title || item.url,
+      url: item.url,
+      excerpt: item.snippet || (item.kind === 'page' ? 'Page read by the assistant.' : 'Search result used by the assistant.'),
+      similarity: 0.9
+    });
+  }
   const followUps = INTENT_FOLLOW_UPS[intent.label as Exclude<IntentLabel, 'off_topic'>] ?? [];
 
   const limitations: string[] = [];
@@ -280,9 +297,9 @@ export async function runChatPipeline(body: AssistantChatRequestBody): Promise<P
         : 'The AI generation provider is not configured, so this answer is an extractive summary of retrieved knowledge-base chunks rather than a model-written response.'
     );
   }
-  if (generation.method === 'llm_generation' && retrieval.chunks.length === 0) {
+  if (generation.method === 'llm_generation' && retrieval.chunks.length === 0 && researchItems.length === 0) {
     limitations.push(
-      'No FarmIQ knowledge-base documents matched this question, so this answer comes from the AI model\u2019s general farming knowledge. It is not verified against approved sources — confirm local conditions before acting.'
+      'No knowledge-base documents matched this question and no web research was performed, so this answer comes from the AI model\u2019s general farming knowledge. It is not verified against approved sources — confirm local conditions before acting.'
     );
   }
   if (generation.method === 'insufficient_evidence' && config.generation) {
@@ -290,9 +307,14 @@ export async function runChatPipeline(body: AssistantChatRequestBody): Promise<P
       'The AI generation provider could not be reached (free-tier rate limits and slow queues are common), so no answer could be generated.'
     );
   }
-  if (retrieval.method === 'local_lexical_index') {
+  if (retrieval.method === 'local_lexical_index' && researchItems.length === 0) {
     limitations.push(
-      'Retrieval is running on FarmIQ\u2019s local knowledge index; Supabase pgvector retrieval activates once database credentials are configured (FIQ-020).'
+      'No live knowledge-base documents matched this turn (Supabase pgvector retrieval activates once database credentials are configured — FIQ-020), and no web research was performed for this answer.'
+    );
+  }
+  if (researchItems.length > 0) {
+    limitations.push(
+      'The assistant researched live web results during this answer (web_search/web_fetch tools) — always open the linked sources to confirm prices, schemes, and local conditions before acting.'
     );
   }
   if (generation.skippedReason === 'weak_retrieval') {
@@ -309,7 +331,7 @@ export async function runChatPipeline(body: AssistantChatRequestBody): Promise<P
   }
   if (intent.label === 'weather_query' || intent.label === 'price_query') {
     limitations.push(
-      'Live weather and market lookups are not yet routed through the chatbot; open the Weather or Markets pages for provider-labeled, timestamped data.'
+      'Web research can surface recent articles about weather and prices, but FarmIQ does not invent live measurements — open the Weather or Markets pages for provider-labeled, timestamped data.'
     );
   }
   if (intent.label === 'disease_diagnosis') {

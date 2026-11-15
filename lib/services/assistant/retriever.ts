@@ -2,8 +2,10 @@
  * Layer 3 — RAG Retriever.
  * Primary path: Supabase pgvector RPC `match_farmiq_docs` (spec section 4c), used
  * when the Supabase keys and an embedding provider are configured (FIQ-020 pending).
- * Fallback path: deterministic lexical scoring over the local in-memory knowledge
- * index with its own calibrated threshold (documented in docs/DECISIONS.md ADR-008).
+ * Offline fallback: deterministic lexical scoring over approved crop/disease
+ * profiles — preloaded static resources were removed (ADR-018).
+ * Live web research happens in the Generation layer via the model's
+ * web_search/web_fetch tools (ADR-019), not here.
  */
 
 import { getProviderConfig } from './config';
@@ -150,7 +152,7 @@ async function retrieveViaPgVector(
       }
     }
   } catch (error) {
-    console.warn('[FarmIQ] pgvector retrieval failed; falling back to local index.', error instanceof Error ? error.message : error);
+    console.warn('[FarmIQ] pgvector retrieval failed; falling back to web search / local index.', error instanceof Error ? error.message : error);
     return null;
   }
 
@@ -172,7 +174,7 @@ export async function retrieve(message: string, intent: IntentLabel): Promise<Re
       if (isEmbeddingConfigured()) {
         const queryEmbedding = await embedText(message);
         const pgResult = await retrieveViaPgVector(queryEmbedding, intent);
-        if (pgResult) return pgResult;
+        if (pgResult && pgResult.chunks.length > 0) return pgResult;
       }
     } catch (error) {
       // Retrieval must degrade to the local index when the provider fails,

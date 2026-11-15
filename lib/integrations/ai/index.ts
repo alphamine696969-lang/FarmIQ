@@ -8,6 +8,14 @@
 
 import type { ChatTurn } from '../../services/assistant/types';
 import { getProviderConfig } from '../../services/assistant/config';
+import {
+  WEB_TOOLS,
+  webSearch,
+  webFetch,
+  toolResultHeader,
+  isWebFetchEnabled,
+  type WebResearchItem
+} from '../webFetch';
 
 // Free-tier gateways queue requests; observed completions take ~100s under load,
 // so classification fails fast (keyword cascade) while generation gets a long window.
@@ -23,6 +31,8 @@ export const DEFAULT_AI_BASE_URL = 'https://tokenharbor.ai/v1';
 export interface GenerationResult {
   text: string;
   modelUsed: string;
+  /** Real pages/search results the model used during this answer (ADR-019). */
+  research?: WebResearchItem[];
 }
 
 export interface ProviderStatus {
@@ -130,10 +140,113 @@ export async function classifyIntentLabel(message: string, history: ChatTurn[]):
 
 /* ------------------------------ Generation ------------------------------ */
 
+/** Bound the agentic loop: ≤3 LLM turns, ≤4 tool executions per answer. */
+const MAX_TOOL_ROUNDS = 3;
+const MAX_TOOL_CALLS_PER_ROUND = 4;
+
+interface ToolCall {
+  id: string;
+  name: string;
+  arguments: string;
+}
+
+/** Provider payloads are untrusted; extract tool calls defensively. */
+function extractToolCalls(payload: unknown): ToolCall[] {
+  if (typeof payload !== 'object' || payload === null) return [];
+  const record = payload as Record<string, unknown>;
+  if (!Array.isArray(record.choices) || record.choices.length === 0) return [];
+  const first = record.choices[0];
+  if (!first || typeof first !== 'object') return [];
+  const message = (first as Record<string, unknown>).message;
+  if (!message || typeof message !== 'object') return [];
+  const rawCalls = (message as Record<string, unknown>).tool_calls;
+  if (!Array.isArray(rawCalls)) return [];
+  const calls: ToolCall[] = [];
+  for (const raw of rawCalls.slice(0, MAX_TOOL_CALLS_PER_ROUND)) {
+    if (typeof raw !== 'object' || raw === null) continue;
+    const call = raw as Record<string, unknown>;
+    const fn = call.function;
+    if (!fn || typeof fn !== 'object') continue;
+    const name = (fn as Record<string, unknown>).name;
+    const args = (fn as Record<string, unknown>).arguments;
+    if (typeof name !== 'string') continue;
+    calls.push({
+      id: typeof call.id === 'string' ? call.id : `call_${calls.length}`,
+      name,
+      arguments: typeof args === 'string' ? args : ''
+    });
+  }
+  return calls;
+}
+
+/**
+ * Execute one model tool call server-side (ADR-019). Returns the tool message
+ * content plus any research items for citation. Never throws — failures come
+ * back as honest tool messages the model can react to.
+ */
+async function executeWebTool(call: ToolCall): Promise<{ content: string; items: WebResearchItem[] }> {
+  if (call.name === 'web_search') {
+    let args: { query?: unknown; recent?: unknown } = {};
+    try {
+      args = JSON.parse(call.arguments) as typeof args;
+    } catch {
+      return { content: 'Error: invalid tool arguments.', items: [] };
+    }
+    if (typeof args.query !== 'string' || !args.query.trim()) {
+      return { content: 'Error: a non-empty "query" string is required.', items: [] };
+    }
+    const outcome = await webSearch(args.query, { recent: args.recent !== false });
+    if (outcome.results.length === 0) {
+      return { content: `${toolResultHeader('search')}\n(no results — ${outcome.reason || 'nothing found'})`, items: [] };
+    }
+    const items: WebResearchItem[] = outcome.results.map((r) => ({
+      kind: 'search',
+      title: r.title,
+      url: r.url,
+      snippet: r.snippet,
+      publishedAt: r.publishedAt
+    }));
+    const lines = outcome.results.map(
+      (r, i) => `${i + 1}. ${r.title}${r.publishedAt ? ` (${r.publishedAt.slice(0, 10)})` : ''}\n   URL: ${r.url}\n   ${r.snippet}`
+    );
+    return { content: `${toolResultHeader('search')}\n${lines.join('\n')}`, items };
+  }
+
+  if (call.name === 'web_fetch') {
+    let args: { url?: unknown } = {};
+    try {
+      args = JSON.parse(call.arguments) as typeof args;
+    } catch {
+      return { content: 'Error: invalid tool arguments.', items: [] };
+    }
+    if (typeof args.url !== 'string' || !args.url.trim()) {
+      return { content: 'Error: a non-empty "url" string is required.', items: [] };
+    }
+    const result = await webFetch(args.url);
+    if (!result.ok) {
+      return { content: `Fetch failed for ${args.url}: ${result.reason}`, items: [] };
+    }
+    const items: WebResearchItem[] = [
+      { kind: 'page', title: result.title || result.finalUrl || result.url, url: result.finalUrl || result.url }
+    ];
+    return {
+      content: `${toolResultHeader('fetch')}\nURL: ${result.finalUrl || result.url}\nTitle: ${result.title || '(none)'}\n\n${result.text}`,
+      items
+    };
+  }
+
+  return { content: `Error: unknown tool "${call.name}".`, items: [] };
+}
+
 /**
  * Locked-prompt generation (spec section 6). The system prompt template is owned
  * by the context-assembly layer; every model receives the same template so
- * persona and domain rules stay consistent across providers.
+ * persona and domain rules stay consistent across providers (spec section 12).
+ *
+ * When web research is enabled (ADR-019), the model receives `web_search` and
+ * `web_fetch` tools and may call them (ChatGPT-style agentic loop, bounded to
+ * MAX_TOOL_ROUNDS turns). All executed tools and their real results are
+ * returned in `research` so the pipeline can cite them.
  */
 export async function generateAnswer(
   systemPrompt: string,
@@ -143,16 +256,62 @@ export async function generateAnswer(
   const status = describeProviderStatus();
   if (!status.generationConfigured) return null;
 
-  const messages = [...history.slice(-4), { role: 'user' as const, content: userMessage }];
+  const messages: Array<Record<string, unknown>> = [
+    { role: 'system', content: systemPrompt },
+    ...history.slice(-4),
+    { role: 'user', content: userMessage }
+  ];
 
-  const raw = await chatCompletion({
+  const research: WebResearchItem[] = [];
+  const useTools = isWebFetchEnabled();
+
+  for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+    const payload: Record<string, unknown> = {
+      model: status.generationModel,
+      max_tokens: 2048,
+      temperature: 0.1,
+      messages,
+      ...(useTools ? { tools: WEB_TOOLS, tool_choice: 'auto' } : {})
+    };
+
+    const raw = await chatCompletion(payload, GENERATION_TIMEOUT_MS);
+    const toolCalls = extractToolCalls(raw);
+
+    if (toolCalls.length === 0) {
+      const text = extractText(raw);
+      if (!text) return null;
+      return { text, modelUsed: status.generationModel, ...(research.length ? { research } : {}) };
+    }
+
+    // Record the assistant's tool calls, execute each server-side, reply with results.
+    messages.push({
+      role: 'assistant',
+      content: null,
+      tool_calls: toolCalls.map((call) => ({
+        id: call.id,
+        type: 'function',
+        function: { name: call.name, arguments: call.arguments }
+      }))
+    });
+
+    for (const call of toolCalls) {
+      const executed = await executeWebTool(call);
+      research.push(...executed.items);
+      messages.push({ role: 'tool', tool_call_id: call.id, content: executed.content });
+    }
+  }
+
+  // Tool budget exhausted: force a final text answer (no more tools).
+  const finalPayload: Record<string, unknown> = {
     model: status.generationModel,
     max_tokens: 2048,
     temperature: 0.1,
-    messages: [{ role: 'system' as const, content: systemPrompt }, ...messages]
-  }, GENERATION_TIMEOUT_MS);
+    messages
+  };
+  const raw = await chatCompletion(finalPayload, GENERATION_TIMEOUT_MS);
   const text = extractText(raw);
-  return text ? { text, modelUsed: status.generationModel } : null;
+  if (!text) return null;
+  return { text, modelUsed: status.generationModel, ...(research.length ? { research } : {}) };
 }
 
 /* --------------------------- Vision (crop photos) --------------------------- */

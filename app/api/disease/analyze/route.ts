@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateVision, describeProviderStatus } from '@/lib/integrations/ai';
 import { parseDiseaseReport, DiseaseReport } from '@/lib/services/disease/analysis';
 import { APPROVED_SOURCES } from '@/lib/data/mockDatabase';
+import { webSearch, isWebFetchEnabled } from '@/lib/integrations/webFetch';
 
 export const maxDuration = 120;
 
@@ -65,9 +66,35 @@ export async function POST(req: NextRequest) {
     }
 
     const registry = APPROVED_SOURCES.map((s) => `${s.id} — ${s.sourceName} (${s.organization})`).join('\n');
+
+    // Web research (ADR-019): pull current guidance for this plant/disease so
+    // the analysis is not limited to preloaded reference material. Keyless
+    // tools (Bing News RSS + Wikipedia); real URLs only — the model can never
+    // invent links.
+    let webContext = '';
+    let webResearchUsed = false;
+    let webResearchReason: string | undefined;
+    if (isWebFetchEnabled()) {
+      const research = await webSearch(
+        `${plantName} plant disease symptoms prevention current guidance`,
+        { recent: false }
+      );
+      webResearchUsed = research.results.length > 0;
+      webResearchReason = research.reason;
+      if (research.results.length > 0) {
+        webContext =
+          '\nRecent web references (use only to enrich cultural/prevention context; still never give dosages):\n' +
+          research.results
+            .map((r, i) => `${i + 1}. ${r.title} — ${r.url}\n   ${r.snippet}`)
+            .join('\n');
+      }
+    } else {
+      webResearchReason = 'Web research is disabled on this server (WEB_FETCH_DISABLED=1).';
+    }
+
     const userText = `Farmer's plant name: "${plantName}". Attached ${images.length} photo(s) of this plant (check leaves, stems, fruit).
 Approved source registry — pick at most 3 relevant ids for source_ids:
-${registry}
+${registry}${webContext}
 Return the JSON analysis now.`;
 
     let result: Awaited<ReturnType<typeof generateVision>> = null;
@@ -96,7 +123,17 @@ Return the JSON analysis now.`;
       .map((s) => ({ id: s.id, sourceName: s.sourceName, organization: s.organization, canonicalUrl: s.canonicalUrl }));
 
     return NextResponse.json({
-      data: { report, sources, providerUsed: result.modelUsed, fallback: false }
+      data: {
+        report,
+        sources,
+        providerUsed: result.modelUsed,
+        fallback: false,
+        webSearch: {
+          used: webResearchUsed,
+          configured: isWebFetchEnabled(),
+          ...(webResearchUsed ? {} : { reason: webResearchReason || 'No web results for that plant.' })
+        }
+      }
     });
   } catch (error) {
     console.error('[FarmIQ] disease analyze failed:', error);

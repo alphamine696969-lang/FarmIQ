@@ -6,6 +6,10 @@
  * Complies with ADR-005 (labeled demo/fallback data) and ADR-006 (abstain on weak evidence).
  */
 
+import type { WebResearchItem } from '../../integrations/webFetch';
+
+export type { WebResearchItem };
+
 export type KnowledgeBase =
   | 'kb_crops'
   | 'kb_diseases'
@@ -86,6 +90,8 @@ export interface GenerationOutcome {
   method: 'llm_generation' | 'extractive_fallback' | 'insufficient_evidence' | 'refusal';
   providerConfigured: boolean;
   skippedReason?: 'weak_retrieval' | 'provider_unconfigured';
+  /** Real search/page results the model used (ADR-019); empty when it did not research. */
+  research?: WebResearchItem[];
 }
 
 export interface OutputValidation {
@@ -130,6 +136,7 @@ export interface PipelineResult {
     embeddings: boolean;
     translation: boolean;
     retrieval: boolean;
+    webSearch: boolean;
   };
   log: TurnLog;
 }

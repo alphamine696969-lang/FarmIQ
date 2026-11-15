@@ -26,12 +26,17 @@ function run(): void {
   assert(!mockDb.includes('INITIAL_MARKET_OBSERVATIONS'), 'mockDatabase no longer exports sample observations');
   assert(!mockDb.includes('export interface MarketObservation'), 'mockDatabase no longer defines MarketObservation');
 
-  // The mock search endpoint is deleted; the live region endpoint exists
+  // The mock search endpoint is deleted; the live region endpoints exist
   assert(!fs.existsSync(path.join(ROOT, 'app/api/markets/search')), 'mock /api/markets/search route is removed');
   assert(fs.existsSync(path.join(ROOT, 'app/api/markets/prices/route.ts')), 'live /api/markets/prices route exists');
+  assert(fs.existsSync(path.join(ROOT, 'app/api/markets/news/route.ts')), 'live /api/markets/news route exists');
   const pricesRoute = read('app/api/markets/prices/route.ts');
   assert(pricesRoute.includes('fetchEurostatAllPrices'), 'prices route uses the official source adapter');
   assert(!pricesRoute.includes('mockDatabase'), 'prices route never reads the mock database');
+  const newsRoute = read('app/api/markets/news/route.ts');
+  assert(newsRoute.includes('webSearch'), 'news route uses the keyless web-research tool');
+  assert(newsRoute.includes('isWebFetchEnabled'), 'news route respects the WEB_FETCH_DISABLED switch');
+  assert(!newsRoute.includes('mockDatabase'), 'news route never reads the mock database');
 
   // No page renders sample market rows
   assertNoMock('app/app/markets/page.tsx');
