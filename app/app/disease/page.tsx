@@ -134,15 +134,14 @@ export default function DiseaseScannerPage() {
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h2 className="text-xl font-extrabold tracking-tight text-[#1C2922]">Disease Scanner</h2>
-              <FreshnessBadge status="supported" label="AI photo analysis (ADR-006)" />
             </div>
             <p className="text-xs text-[#3D4A3B] mt-1 font-medium">
               Name your plant, upload a photo of the affected plant, and the AI identifies it, explains the disease, and gives recovery and prevention guidance with official sources.
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs bg-[#FFF6EB] text-[#895100] px-4 py-2 rounded-full border border-[#FFE0B2] font-bold shrink-0">
-            <ShieldCheck className="w-4 h-4 text-[#FD9D1A]" />
-            <span>No dosages — cultural guidance only</span>
+          <div className="flex items-center gap-2 text-xs bg-[#EDF6ED] text-[#153D2B] px-4 py-2 rounded-full border border-[#DCE5DC] font-bold shrink-0">
+            <ShieldCheck className="w-4 h-4 text-[#1BC447]" />
+            <span>Agronomic Diagnosis</span>
           </div>
         </div>
 
@@ -343,7 +342,7 @@ export default function DiseaseScannerPage() {
 
                 {/* ADR-006 */}
                 <div className="p-4 rounded-2xl bg-[#FFF6EB] border border-[#FFE0B2] text-[11px] text-[#895100] space-y-1">
-                  <p className="font-extrabold flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 text-[#FD9D1A]" /> Regulatory Safety Notice (ADR-006)</p>
+                  <p className="font-extrabold flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 text-[#FD9D1A]" /> Agricultural Safety Notice</p>
                   <p className="leading-relaxed font-medium">
                     This analysis is advisory and observational. FarmIQ never provides pesticide dosages or chemical treatment instructions. For any treatment decision, consult your local certified extension officer and follow an authorized product label.
                   </p>

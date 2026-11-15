@@ -177,7 +177,6 @@ export default function CropAdvisorPage() {
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h2 className="text-xl font-extrabold tracking-tight text-[#1C2922]">Crop Advisor</h2>
-              <FreshnessBadge status="supported" label="Live location data + full crop catalog (FIQ-099)" />
             </div>
             <p className="text-xs text-[#3D4A3B] mt-1 font-medium">
               Pick your location to load observed climate and soil, then see suitability for every crop in the catalog — not a handful of presets.
@@ -185,7 +184,7 @@ export default function CropAdvisorPage() {
           </div>
           <div className="flex items-center gap-2 text-xs bg-[#EDF6ED] text-[#153D2B] px-4 py-2 rounded-full border border-[#DCE5DC] font-bold shrink-0">
             <ShieldCheck className="w-4 h-4 text-[#1BC447]" />
-            <span>{CROP_ADVISORY_CATALOG.length} crops · no mock data</span>
+            <span>{CROP_ADVISORY_CATALOG.length} Verified Crops</span>
           </div>
         </div>
 

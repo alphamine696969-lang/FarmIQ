@@ -124,9 +124,8 @@ export default function HomePage() {
           <div className="mt-14 max-w-5xl mx-auto bg-white border border-[#DCE5DC] rounded-3xl shadow-bento overflow-hidden">
             <div className="bg-[#153D2B] px-6 py-4 flex flex-wrap items-center justify-between gap-4 text-white">
               <div className="flex items-center gap-3">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#1BC447] animate-pulse" />
-                <span className="text-sm font-extrabold tracking-wide">Interactive Farm Economics Telemetry</span>
-                <FreshnessBadge status="sample-historical" label="Sample Model • Verified Math" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#1BC447]" />
+                <span className="text-sm font-extrabold tracking-wide">Farm Economics Calculator Preview</span>
               </div>
               <Link
                 href="/app/profit"

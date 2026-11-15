@@ -305,12 +305,9 @@ export default function DashboardPage() {
 
           {/* Market Intelligence Sidebar Bento (4 cols) */}
           <div className="lg:col-span-4 bg-white rounded-3xl border border-[#DCE5DC] p-7 shadow-bento space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-extrabold text-[#1C2922]">Market Price Watch</h3>
-                <p className="text-[11px] text-[#3D4A3B]">Official prices for your region.</p>
-              </div>
-              <FreshnessBadge status="live" label="Official source" />
+            <div>
+              <h3 className="text-base font-extrabold text-[#1C2922]">Market Price Watch</h3>
+              <p className="text-[11px] text-[#3D4A3B]">Official prices for your region.</p>
             </div>
 
             <div className="p-5 rounded-2xl bg-[#F3FCF3] border border-[#DCE5DC] space-y-2 text-center">

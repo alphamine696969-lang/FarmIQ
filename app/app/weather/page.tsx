@@ -136,7 +136,6 @@ export default function WeatherPage() {
           <div>
             <div className="flex items-center gap-2.5">
               <h2 className="text-xl font-extrabold text-[#1C2922]">Agro-Meteorological Weather Intelligence</h2>
-              <FreshnessBadge status={data ? "live" : "supported"} label={data ? "NASA POWER Live Satellite API" : "NASA POWER Ready"} />
             </div>
             <p className="text-xs text-[#3D4A3B] mt-1 font-medium">
               Field-level weather forecasting tailored for evapotranspiration (ET0), soil workability, and foliar spray drift.
@@ -226,8 +225,8 @@ export default function WeatherPage() {
             <div className="bg-white rounded-3xl border border-[#DCE5DC] p-7 sm:p-9 shadow-bento space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DCE5DC] pb-4">
                 <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#153D2B] bg-[#EDF6ED] px-2.5 py-0.5 rounded-full border border-[#DCE5DC]">
-                    Active Satellite Telemetry (NASA POWER AG)
+                  <span className="text-[11px] font-bold text-[#153D2B] bg-[#EDF6ED] px-3 py-1 rounded-full border border-[#DCE5DC]">
+                    NASA POWER Agroclimatology
                   </span>
                   <h3 className="text-lg font-extrabold text-[#1C2922] mt-1.5">{data.locationName}</h3>
                 </div>
@@ -309,7 +308,7 @@ export default function WeatherPage() {
                       <div className="flex items-center gap-2">
                         <h3 className="text-base font-extrabold text-[#1C2922]">NASA POWER Satellite Agroclimatology</h3>
                         <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#EDF6ED] text-[#0B4D2E] px-2 py-0.5 rounded-full border border-[#DCE5DC]">
-                          Community: AG
+                          Satellite Norms
                         </span>
                       </div>
                       <p className="text-xs text-[#3D4A3B] mt-0.5">

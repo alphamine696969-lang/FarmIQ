@@ -143,7 +143,6 @@ export default function ProfitPage() {
           <div>
             <div className="flex items-center gap-2.5">
               <h2 className="text-xl font-extrabold text-[#1C2922]">Farm Profit & Break-Even Calculator</h2>
-              <FreshnessBadge status="supported" label="Deterministic Math (FIQ-040)" />
             </div>
             <p className="text-xs text-[#3D4A3B] mt-1 font-medium">
               Calculate total production, break-even yields, operating margins, and compare crop scenarios with mathematical precision.

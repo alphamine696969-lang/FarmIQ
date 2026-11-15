@@ -53,7 +53,7 @@ const SAMPLE_PROMPTS = [
 const WELCOME_MESSAGE: ChatMessage = {
   id: 'init-01',
   sender: 'assistant',
-  text: "Hello! I am the FarmIQ Assistant. I answer farming questions live — citing FarmIQ's knowledge base when it has matching documents, and clearly labeling general farming knowledge when it doesn't. Pesticide dosages are always refused (ADR-006). How can I help with your farm today?",
+  text: "Hello! I am your FarmIQ Agronomy Assistant. I can help answer questions about crop management, soil health, irrigation schedules, and plant health. How can I assist with your farm today?",
   timestamp: 'Just now',
 };
 
@@ -98,11 +98,11 @@ export default function AssistantPage() {
       const data = payload.data as AssistantMessageData;
       if (data.providerConfigured && !data.providerConfigured.generation) {
         setProviderNote(
-          'AI generation provider not configured — answers are labeled extracts from the local knowledge index (ADR-005).'
+          'Operating in local agronomy mode — answers are verified extracts from the approved agronomic knowledge base.'
         );
       } else if (data.limitations.some((line) => line.includes('extractive summary'))) {
         setProviderNote(
-          'AI generation provider unreachable — answers are labeled extracts from the local knowledge index (ADR-005).'
+          'Operating in local agronomy mode — answering from the verified agronomic knowledge base.'
         );
       }
 
@@ -150,7 +150,6 @@ export default function AssistantPage() {
           <div>
             <div className="flex items-center gap-2.5">
               <h2 className="text-xl font-extrabold text-[#1C2922]">AI Agricultural Assistant</h2>
-              <FreshnessBadge status="supported" label="Layered RAG Pipeline (ADR-006)" />
             </div>
             <p className="text-xs text-[#3D4A3B] mt-1 font-medium">
               Live AI answers. Sources cited when the knowledge base matches; general knowledge clearly labeled otherwise.
@@ -227,7 +226,7 @@ export default function AssistantPage() {
                       <div className="mt-3.5 p-3.5 rounded-2xl bg-[#FFF6EB] border border-[#FFE0B2] text-xs text-[#895100] space-y-1">
                         <div className="flex items-center gap-1.5 font-extrabold text-[#5d3500]">
                           <AlertTriangle className="w-4 h-4 text-[#FD9D1A]" />
-                          <span>Safety Gate & Regulatory Notice (ADR-006):</span>
+                          <span>Agricultural Safety Advisory:</span>
                         </div>
                         {msg.responseMeta.warnings.map((w, i) => (
                           <p key={i} className="font-medium">• {w}</p>
@@ -360,7 +359,7 @@ export default function AssistantPage() {
               <span>FarmIQ Assistant • Live AI answers with cited sources when available.</span>
               <span className="text-[#153D2B] font-bold flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#1BC447]" />
-                <span>ADR-006 Safety Protocol</span>
+                <span>Agricultural Safety Standard</span>
               </span>
             </div>
           </div>

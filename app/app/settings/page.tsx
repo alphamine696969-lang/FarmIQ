@@ -105,8 +105,7 @@ export default function SettingsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-7 rounded-3xl border border-[#DCE5DC] shadow-bento">
           <div>
             <div className="flex items-center gap-2.5">
-              <h2 className="text-xl font-extrabold text-[#1C2922]">Settings & Agricultural Preferences</h2>
-              <FreshnessBadge status="supported" label="Saved Locally" />
+              <h2 className="text-xl font-extrabold text-[#1C2922]">Workspace Settings</h2>
             </div>
             <p className="text-xs text-[#3D4A3B] mt-1 font-medium">
               Configure your profile identity, units of measurement, primary accounting currency, and notification thresholds.

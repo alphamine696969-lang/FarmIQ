@@ -934,14 +934,6 @@ export default function CropPathPage() {
           )}
         </div>
 
-        {/* Live-data notice */}
-        <div className="flex items-start gap-2.5 bg-white/70 border border-[#DCE5DC] rounded-2xl px-4 py-3 text-[11px] text-[#3D4A3B] font-medium">
-          <AlertTriangle className="w-4 h-4 text-[#FD9D1A] shrink-0 mt-0.5" />
-          <span>
-            Weather, soil, and prices are fetched live (NASA POWER Agroclimatology, SoilGrids, Eurostat official annual prices) — where a source is not connected or not covering your country, it is shown as <strong>unavailable</strong> rather than filled with sample data. Trackers are stored only in this browser (account sync pending). AI outputs are advisory and never dosages.
-          </span>
-        </div>
-
         {/* ------------------------------- HOME ------------------------------- */}
         {view === 'home' && (
           <div className="space-y-6">
@@ -1402,9 +1394,6 @@ export default function CropPathPage() {
                   <div className="flex items-center gap-2">
                     <CloudSun className="w-4 h-4 text-[#1BC447]" />
                     <h3 className="text-sm font-extrabold text-[#1C2922]">Live weather — {t.locationLabel || t.village || t.region || 'field location'}</h3>
-                    {trackerWeather.state === 'ready' && (
-                      <FreshnessBadge status="live" label="NASA POWER live" />
-                    )}
                   </div>
                   <button
                     onClick={() => loadTrackerWeather(t)}
@@ -1527,7 +1516,6 @@ export default function CropPathPage() {
                             <a href={harvestPrice.info.datasetUrl} target="_blank" rel="noopener noreferrer" className="text-[#153D2B] font-bold underline">source</a>
                           </p>
                         </div>
-                        <FreshnessBadge status="live" label="Official" />
                       </div>
                     )}
                     {!harvestPrice.loading && !harvestPrice.info && (
@@ -1536,7 +1524,7 @@ export default function CropPathPage() {
                       </p>
                     )}
                     <p className="text-[10px] text-[#3D4A3B] font-medium">
-                      Nearest physical markets and online platforms are not connected yet (FIQ-093) — always compare your local mandi/agent rates before selling.
+                      Always compare local market and mandi rates in your area before finalizing crop sales.
                     </p>
                   </div>
 
@@ -1596,7 +1584,6 @@ export default function CropPathPage() {
                   <div className="flex items-center gap-2">
                     <Receipt className="w-5 h-5 text-[#1BC447]" />
                     <h3 className="text-base font-extrabold text-[#1C2922]">CropPath receipt — completed</h3>
-                    <FreshnessBadge status="supported" label="Your records" />
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
                     <div><p className="text-[#3D4A3B] font-medium">Total revenue</p><p className="font-extrabold text-[#1C2922] tabular-nums">{money(t.receipt.profit.grossRevenue, t.receipt.profit.currency)}</p></div>
@@ -1772,7 +1759,7 @@ export default function CropPathPage() {
                       {photos.length === 0 && (
                         <p className="text-[10px] text-[#895100] font-bold">Attach at least 1 photo — photos are required for the weekly report.</p>
                       )}
-                      <p className="text-[10px] text-[#3D4A3B] font-medium">Submitting analyzes your report and may adjust the schedule. No pesticide dosages are ever provided (ADR-006).</p>
+                      <p className="text-[10px] text-[#3D4A3B] font-medium">Submitting analyzes your field observations and updates your management recommendations accordingly.</p>
                     </div>
                   )}
                 </div>

@@ -31,11 +31,11 @@ interface AppShellProps {
 
 const NAV_ITEMS = [
   { href: '/app', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/app/assistant', label: 'AI Assistant', icon: Bot, badge: 'RAG' },
+  { href: '/app/assistant', label: 'AI Assistant', icon: Bot },
   { href: '/app/markets', label: 'Market Prices', icon: TrendingUp },
-  { href: '/app/profit', label: 'Profit Calculator', icon: Calculator, badge: 'Tool' },
+  { href: '/app/profit', label: 'Profit Calculator', icon: Calculator },
   { href: '/app/crop-advisor', label: 'Crop Advisor', icon: Compass },
-  { href: '/app/crop-path', label: 'CropPath Tracker', icon: Sprout, badge: 'Live' },
+  { href: '/app/crop-path', label: 'CropPath Tracker', icon: Sprout },
   { href: '/app/disease', label: 'Disease Scanner', icon: ScanLine },
   { href: '/app/weather', label: 'Agro Weather', icon: CloudSun },
   { href: '/app/farms', label: 'Farms & Plots', icon: Home },
@@ -106,7 +106,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           <span className="px-3 py-1 rounded-full bg-[#EDF6ED] text-[#0B4D2E] font-bold border border-[#DCE5DC]">
             {profile?.preferences.preferredCurrency || 'USD'}
           </span>
-          <span className="w-2.5 h-2.5 rounded-full bg-[#4CAF50] animate-pulse" />
         </div>
       </div>
 
@@ -203,36 +202,18 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                     <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-[#1C2922]' : 'text-[#1BC447]'}`} />
                     <span className="text-sm font-semibold">{item.label}</span>
                   </div>
-                  {item.badge && (
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
-                        isActive ? 'bg-[#153D2B] text-[#1BC447]' : 'bg-[#0E281C] text-[#1BC447] border border-[#1BC447]/30'
-                      }`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
                 </Link>
               );
             })}
           </nav>
 
           {/* Sidebar Footer */}
-          <div className="animate-fade-in p-4 border-t border-[#1C4D37] bg-[#0E281C]/60 space-y-2">
-            <div className="flex items-center justify-between text-[11px] text-white/70">
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-[#1BC447]" />
-                <span>Verified RAG</span>
-              </span>
-              <span className="text-[10px] bg-[#1BC447]/20 text-[#1BC447] px-2 py-0.5 rounded-full font-mono font-bold">
-                Telemetry v2.0
-              </span>
-            </div>
+          <div className="animate-fade-in p-4 border-t border-[#1C4D37] bg-[#0E281C]/60">
             <Link
               href="/"
-              className="flex items-center justify-between text-xs text-white/70 hover:text-[#1BC447] transition-colors py-1 font-medium"
+              className="flex items-center justify-between text-xs text-white/70 hover:text-[#1BC447] transition-colors py-1.5 font-medium"
             >
-              <span>Public Platform</span>
+              <span>FarmIQ Platform</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -256,20 +237,16 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             <h1 className="text-xl font-extrabold text-[#153D2B]">
               {NAV_ITEMS.find((n) => n.href === pathname)?.label || 'Farmer Workspace'}
             </h1>
-            <div className="flex items-center gap-1.5 text-xs text-[#153D2B] font-bold bg-[#EDF6ED] px-3.5 py-1.5 rounded-full border border-[#DCE5DC]">
-              <span>Holding:</span>
-              <span className="font-extrabold">{activeFarm?.name}</span>
-              <span className="text-[11px] text-[#3D4A3B]">({activeFarm?.country})</span>
-            </div>
+            {activeFarm?.name ? (
+              <div className="flex items-center gap-1.5 text-xs text-[#153D2B] font-bold bg-[#EDF6ED] px-3.5 py-1.5 rounded-full border border-[#DCE5DC]">
+                <span className="text-[#3D4A3B] font-semibold">Farm:</span>
+                <span className="font-extrabold">{activeFarm.name}</span>
+                {activeFarm.country ? <span className="text-[11px] text-[#3D4A3B]">({activeFarm.country})</span> : null}
+              </div>
+            ) : null}
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Live telemetry indicator (pulsing #1BC447 dot) */}
-            <div className="flex items-center gap-2 text-xs font-bold text-[#153D2B] bg-[#EDF6ED] px-3.5 py-1.5 rounded-full border border-[#DCE5DC]">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#1BC447] animate-pulse" />
-              <span>Telemetry Active • Precision Sync</span>
-            </div>
-
             {/* Currency switcher pill */}
             <div className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-white border border-[#DCE5DC] text-[#1C2922]">
               Currency: <span className="text-[#153D2B] font-extrabold">{profile?.preferences.preferredCurrency || 'USD'}</span>

@@ -145,8 +145,7 @@ export default function FarmsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-7 rounded-3xl border border-[#DCE5DC] shadow-bento">
           <div>
             <div className="flex items-center gap-2.5">
-              <h2 className="text-xl font-extrabold text-[#1C2922]">My Farms & Field Plot Governance</h2>
-              <FreshnessBadge status="supported" label="Private Tenant RLS (FIQ-030)" />
+              <h2 className="text-xl font-extrabold text-[#1C2922]">Farms & Field Plots</h2>
             </div>
             <p className="text-xs text-[#3D4A3B] mt-1 font-medium">
               Manage multiple landholdings, plot soil test records, and seasonal crop cycles.
