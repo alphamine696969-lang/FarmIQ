@@ -383,14 +383,19 @@ html, body {
 }
 
 .fiq-link {
-  color: #153D2B;
+  color: #0E6238;
   font-weight: 600;
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration-color: #1BC447;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  word-break: break-all;
 }
 
 .fiq-link:hover {
   color: #1BC447;
+  text-decoration-color: #0E6238;
 }
 
 .fiq-stopped {

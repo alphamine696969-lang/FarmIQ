@@ -233,8 +233,8 @@ const FileIcon = () => (
 /* ------------------------------------------------------------------ */
 
 function renderInline(text: string, isStreaming = false): ReactNode {
-  // Regex to match **bold**, *italic*, and [links](url)
-  const regex = /(\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\))/g;
+  // Regex to match **bold**, *italic*, [markdown links](url), and bare https:// URLs
+  const regex = /(\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s<>)"]+)/g;
   const parts = text.split(regex);
 
   return parts.map((part, index) => {
@@ -269,6 +269,20 @@ function renderInline(text: string, isStreaming = false): ReactNode {
           className="fiq-link"
         >
           {linkMatch[1]}
+        </a>
+      );
+    }
+
+    if (part.startsWith("http://") || part.startsWith("https://")) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fiq-link"
+        >
+          {part}
         </a>
       );
     }

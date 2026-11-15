@@ -85,9 +85,17 @@ export async function POST(req: NextRequest) {
       answerText += `\n\n⚠️ Agricultural Safety Advisory:\n` + result.warnings.map((w) => `• ${w}`).join('\n');
     }
 
-    // Append verified citations if present
+    // Append verified citations as clickable markdown links
     if (result.sources && result.sources.length > 0) {
-      answerText += `\n\nVerified Sources:\n` + result.sources.map((s) => `• ${s.sourceLabel}${s.url ? ` (${s.url})` : ''}`).join('\n');
+      answerText +=
+        `\n\nVerified Sources:\n` +
+        result.sources
+          .map((s) =>
+            s.url
+              ? `• [${s.sourceLabel}](${s.url})`
+              : `• ${s.sourceLabel}`
+          )
+          .join('\n');
     }
 
     // Stream the plain text back in word chunks for fluid animation
