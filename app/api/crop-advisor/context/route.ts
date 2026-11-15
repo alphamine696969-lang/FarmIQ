@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
       },
       meta: {
         providers: [
-          climate ? 'Open-Meteo (observed climate)' : 'Climate unavailable',
+          climate ? 'NASA POWER (observed agroclimatology)' : 'Climate unavailable',
           soil ? 'ISRIC SoilGrids (soil)' : 'SoilGrids unavailable'
         ],
         isLive: Boolean(climate || soil)

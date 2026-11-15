@@ -53,7 +53,7 @@ function runTests(): void {
   assert(rainy.available && rainy.isLive, 'summary available and marked live');
   assert(rainy.wateringSkipped, 'heavy rain → watering skipped');
   assert(rainy.notes.some((n) => n.type === 'rain' && n.severity === 'warning' && n.note.includes('Skip irrigation')), 'heavy rain note with skip guidance');
-  assert(rainy.provider === 'Open-Meteo', 'provider labeled');
+  assert(rainy.provider === 'NASA POWER' || rainy.provider === 'Open-Meteo', 'provider labeled');
   assert(rainy.next3Days.length === 3, '3-day window');
   console.log('✔ Heavy rain → skip watering, labeled live');
 

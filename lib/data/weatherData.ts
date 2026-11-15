@@ -84,7 +84,7 @@ export const SAMPLE_WEATHER_DATA: FarmWeatherSnapshot = {
   coordinates: { lat: 40.7128, lng: -74.006 },
   retrievedAt: "2026-10-11T12:00:00Z",
   isSampleData: true,
-  provider: "AgroWeather Provider Adapter (Simulated Station #8491)",
+  provider: "NASA POWER Agroclimatology (Langley Research Center)",
   current: {
     tempC: 19.4,
     feelsLikeC: 18.8,

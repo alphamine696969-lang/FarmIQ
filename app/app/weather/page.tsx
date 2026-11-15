@@ -136,7 +136,7 @@ export default function WeatherPage() {
           <div>
             <div className="flex items-center gap-2.5">
               <h2 className="text-xl font-extrabold text-[#1C2922]">Agro-Meteorological Weather Intelligence</h2>
-              <FreshnessBadge status={data ? "live" : "supported"} label={data ? "Open-Meteo Live API" : "Live Weather Ready"} />
+              <FreshnessBadge status={data ? "live" : "supported"} label={data ? "NASA POWER Live Satellite API" : "NASA POWER Ready"} />
             </div>
             <p className="text-xs text-[#3D4A3B] mt-1 font-medium">
               Field-level weather forecasting tailored for evapotranspiration (ET0), soil workability, and foliar spray drift.
@@ -198,7 +198,7 @@ export default function WeatherPage() {
           </div>
 
           {loading && (
-            <p className="text-xs text-[#153D2B] font-bold animate-pulse">Loading live weather telemetry from Open-Meteo...</p>
+            <p className="text-xs text-[#153D2B] font-bold animate-pulse">Loading satellite agro-meteorology from NASA POWER...</p>
           )}
 
           {error && (
@@ -227,7 +227,7 @@ export default function WeatherPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DCE5DC] pb-4">
                 <div>
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#153D2B] bg-[#EDF6ED] px-2.5 py-0.5 rounded-full border border-[#DCE5DC]">
-                    Active Station Reading (Open-Meteo)
+                    Active Satellite Telemetry (NASA POWER AG)
                   </span>
                   <h3 className="text-lg font-extrabold text-[#1C2922] mt-1.5">{data.locationName}</h3>
                 </div>

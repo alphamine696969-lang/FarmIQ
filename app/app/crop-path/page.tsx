@@ -459,7 +459,7 @@ export default function CropPathPage() {
         summary: {
           available: true,
           isLive: true,
-          provider: 'Open-Meteo',
+          provider: 'NASA POWER',
           locationName: context.location?.label || placeLabel(regionPlace || { name: region, latitude: 0, longitude: 0 }),
           country: context.location?.country,
           latitude: context.location?.latitude ?? regionPlace?.latitude ?? 0,
@@ -939,7 +939,7 @@ export default function CropPathPage() {
         <div className="flex items-start gap-2.5 bg-white/70 border border-[#DCE5DC] rounded-2xl px-4 py-3 text-[11px] text-[#3D4A3B] font-medium">
           <AlertTriangle className="w-4 h-4 text-[#FD9D1A] shrink-0 mt-0.5" />
           <span>
-            Weather, soil, and prices are fetched live (Open-Meteo, SoilGrids, Eurostat official annual prices) — where a source is not connected or not covering your country, it is shown as <strong>unavailable</strong> rather than filled with sample data. Trackers are stored only in this browser (account sync pending). AI outputs are advisory and never dosages.
+            Weather, soil, and prices are fetched live (NASA POWER Agroclimatology, SoilGrids, Eurostat official annual prices) — where a source is not connected or not covering your country, it is shown as <strong>unavailable</strong> rather than filled with sample data. Trackers are stored only in this browser (account sync pending). AI outputs are advisory and never dosages.
           </span>
         </div>
 
@@ -1154,7 +1154,7 @@ export default function CropPathPage() {
                     {cropContext.days?.length ? ` 14-day rain total ${cropContext.days.reduce((s, d) => s + (Number.isFinite(d.precipitationMm) ? d.precipitationMm : 0), 0).toFixed(0)} mm •` : ''}
                     Soil: {cropContext.soil ? <strong>{cropContext.soil.textureClass}</strong> : 'unavailable — select manually'}
                   </p>
-                  <p className="text-[10px] opacity-80">Sources: Open-Meteo forecast{cropContext.soil ? ` + ${cropContext.soil.sourceName}` : ''} • retrieved {cropContext.retrievedAt?.slice(0, 16).replace('T', ' ')} UTC</p>
+                  <p className="text-[10px] opacity-80">Sources: NASA POWER Agroclimatology{cropContext.soil ? ` + ${cropContext.soil.sourceName}` : ''} • retrieved {cropContext.retrievedAt?.slice(0, 16).replace('T', ' ')} UTC</p>
                 </div>
               )}
               {contextState === 'unavailable' && (
@@ -1172,7 +1172,7 @@ export default function CropPathPage() {
               {recWeather.state === 'ready' && recWeather.summary && (
                 <div className="flex flex-wrap items-center gap-2 text-[11px] bg-[#EDF7FF] border border-[#BEE3F8] rounded-2xl px-4 py-3 text-[#004263] font-medium">
                   <CloudSun className="w-4 h-4 shrink-0" />
-                  <span className="font-extrabold">Weather-informed (live, Open-Meteo):</span>
+                  <span className="font-extrabold">Weather-informed (live, NASA POWER):</span>
                   <span>
                     {recWeather.summary.currentTempC !== null ? `${recWeather.summary.currentTempC.toFixed(0)}°C now` : 'live forecast'} in {recWeather.summary.locationName}
                     {recWeather.summary.precipNext3DaysMm > 0 ? ` • ${recWeather.summary.precipNext3DaysMm} mm rain next 3 days` : ' • dry next 3 days'}
@@ -1404,7 +1404,7 @@ export default function CropPathPage() {
                     <CloudSun className="w-4 h-4 text-[#1BC447]" />
                     <h3 className="text-sm font-extrabold text-[#1C2922]">Live weather — {t.locationLabel || t.village || t.region || 'field location'}</h3>
                     {trackerWeather.state === 'ready' && (
-                      <FreshnessBadge status="live" label="Open-Meteo live" />
+                      <FreshnessBadge status="live" label="NASA POWER live" />
                     )}
                   </div>
                   <button
