@@ -20,7 +20,6 @@ import {
   CheckCircle2,
   Lock,
   User,
-  Play,
   LogOut
 } from 'lucide-react';
 import { GoogleIcon, GoogleSignInButton } from '@/components/auth/GoogleAuth';
@@ -333,18 +332,6 @@ export default function SettingsPage() {
             >
               <Download className="w-4 h-4 text-[#1BC447]" />
               <span>Export Farm Workspace (JSON)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                try { sessionStorage.removeItem('farmiq_splash_viewed'); } catch {}
-                window.location.href = '/?splash=1';
-              }}
-              className="px-6 py-3 rounded-full border border-[#DCE5DC] hover:bg-[#EDF6ED] text-xs font-bold text-[#153D2B] flex items-center gap-2 transition-smooth shadow-xs"
-            >
-              <Play className="w-4 h-4 text-[#1BC447]" />
-              <span>Replay Splash Screen</span>
             </button>
 
             <button
