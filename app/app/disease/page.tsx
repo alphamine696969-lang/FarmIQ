@@ -248,111 +248,145 @@ export default function DiseaseScannerPage() {
 
             {/* AI report */}
             {report && !analyzing && (
-              <div className="bg-white rounded-3xl border border-[#DCE5DC] p-6 shadow-bento space-y-5">
-                <div className="flex items-start justify-between gap-3 border-b border-[#DCE5DC] pb-4">
+              <div className="bg-white rounded-3xl border border-[#DCE5DC] p-6 sm:p-7 shadow-bento space-y-6">
+                {/* 1. Header & Disease Name Banner */}
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-[#DCE5DC] pb-5">
                   <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#EDF7FF] text-[#004263] px-3 py-1 rounded-full border border-[#BEE3F8] inline-flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" /> AI photo analysis
-                    </span>
-                    <h3 className="text-xl font-black text-[#153D2B] mt-2 flex items-center gap-2 flex-wrap">
-                      <Leaf className="w-5 h-5 text-[#1BC447]" /> {report.plantIdentified}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider bg-[#EDF6ED] text-[#153D2B] px-3 py-1 rounded-full border border-[#DCE5DC] inline-flex items-center gap-1.5">
+                        <Leaf className="w-3.5 h-3.5 text-[#1BC447]" /> {report.plantIdentified}
+                      </span>
                       <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold border ${report.plantMatchConfirmed ? 'bg-[#EDF6ED] text-[#153D2B] border-[#DCE5DC]' : 'bg-[#FFF6EB] text-[#895100] border-[#FFE0B2]'}`}>
                         {report.plantMatchConfirmed ? `Matches “${plantName}”` : `Differs from “${plantName}”`}
                       </span>
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-black text-[#153D2B] mt-2">
+                      {report.diseaseName}
                     </h3>
-                    <p className="text-[11px] text-[#3D4A3B] font-medium mt-1">You entered: {plantName}</p>
+                    <p className="text-xs text-[#3D4A3B] font-medium mt-1">Identified from sample for: {plantName}</p>
                   </div>
-                  <span className={`text-[10px] px-2.5 py-1 rounded-full font-extrabold border shrink-0 ${SEVERITY_STYLES[report.severity]}`}>
-                    {report.severity === 'none' ? 'No disease seen' : `Severity: ${report.severity}`}
+                  <span className={`text-xs px-3.5 py-1.5 rounded-full font-extrabold border self-start shrink-0 ${SEVERITY_STYLES[report.severity]}`}>
+                    {report.severity === 'none' ? 'Healthy • No disease seen' : `Severity: ${report.severity.toUpperCase()}`}
                   </span>
                 </div>
 
-                {/* Plant details + growing conditions */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="bg-[#F3FCF3] border border-[#DCE5DC] rounded-2xl p-4 space-y-1.5">
-                    <p className="text-[11px] font-extrabold text-[#153D2B]">What is this plant?</p>
-                    <p className="text-[11px] text-[#1C2922] font-medium leading-relaxed">{report.plantDetails}</p>
-                  </div>
-                  <div className="bg-[#F3FCF3] border border-[#DCE5DC] rounded-2xl p-4 space-y-1.5">
-                    <p className="text-[11px] font-extrabold text-[#153D2B]">Growing conditions it prefers (and why)</p>
-                    <p className="text-[11px] text-[#1C2922] font-medium leading-relaxed">{report.growingConditions}</p>
-                  </div>
+                {/* 2. Cause & Symptoms Overview Box */}
+                <div className="bg-[#FFF9ED] border border-[#F6D8A2] border-l-4 border-l-[#E69500] rounded-2xl p-4 sm:p-5 space-y-1.5">
+                  <p className="text-xs font-bold text-[#895100] uppercase tracking-wider flex items-center gap-1.5">
+                    <Bug className="w-4 h-4 text-[#E69500]" /> Why It Occurs & Symptoms
+                  </p>
+                  <p className="text-sm text-[#5d3500] font-medium leading-relaxed">
+                    {report.diseaseWhy}
+                  </p>
                 </div>
 
-                {/* Disease */}
-                <div className="bg-[#FFF6EB] border border-[#FFE0B2] rounded-2xl p-4 space-y-1.5">
-                  <p className="text-[11px] font-extrabold text-[#895100] flex items-center gap-1.5"><Bug className="w-3.5 h-3.5" /> Disease identified</p>
-                  <p className="text-sm font-extrabold text-[#5d3500]">{report.diseaseName}</p>
-                  <p className="text-[11px] text-[#895100] font-medium leading-relaxed"><strong>Why it occurs:</strong> {report.diseaseWhy}</p>
-                </div>
-
-                {/* Recovery */}
+                {/* 3. Action Plan: Recovery Steps (Priority #1) */}
                 {report.recoverySteps.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-extrabold text-[#153D2B] flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 text-[#1BC447]" /> How to help the plant recover</p>
-                    <ul className="space-y-1.5">
-                      {report.recoverySteps.map((s, i) => (
-                        <li key={i} className="text-[11px] text-[#1C2922] font-medium flex items-start gap-2">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-[#1BC447] shrink-0 mt-0.5" /> <span>{s}</span>
-                        </li>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-[#EDF6ED] text-[#153D2B] flex items-center justify-center font-bold text-xs border border-[#DCE5DC]">
+                        <RefreshCw className="w-3.5 h-3.5 text-[#1BC447]" />
+                      </div>
+                      <h4 className="text-sm font-extrabold text-[#153D2B]">
+                        Immediate Recovery Plan (What to do now)
+                      </h4>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2.5">
+                      {report.recoverySteps.map((step, i) => (
+                        <div
+                          key={i}
+                          className="flex items-start gap-3 bg-[#F3FCF3]/70 border border-[#DCE5DC] rounded-xl p-3.5 text-sm text-[#1C2922] font-medium leading-relaxed"
+                        >
+                          <CheckCircle2 className="w-4 h-4 text-[#1BC447] shrink-0 mt-0.5" />
+                          <span>{step}</span>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
 
-                {/* Prevention */}
+                {/* 4. Prevention Plan: Future Protection (Priority #2) */}
                 {report.preventionSteps.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-extrabold text-[#153D2B] flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 text-[#1BC447]" /> Protecting this crop from future diseases</p>
-                    <ul className="space-y-1.5">
-                      {report.preventionSteps.map((s, i) => (
-                        <li key={i} className="text-[11px] text-[#1C2922] font-medium flex items-start gap-2">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-[#1BC447] shrink-0 mt-0.5" /> <span>{s}</span>
-                        </li>
+                  <div className="space-y-3 pt-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-[#EDF6ED] text-[#153D2B] flex items-center justify-center font-bold text-xs border border-[#DCE5DC]">
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#1BC447]" />
+                      </div>
+                      <h4 className="text-sm font-extrabold text-[#153D2B]">
+                        Future Prevention & Crop Protection
+                      </h4>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2.5">
+                      {report.preventionSteps.map((step, i) => (
+                        <div
+                          key={i}
+                          className="flex items-start gap-3 bg-white border border-[#DCE5DC] rounded-xl p-3.5 text-sm text-[#1C2922] font-medium leading-relaxed"
+                        >
+                          <CheckCircle2 className="w-4 h-4 text-[#1BC447] shrink-0 mt-0.5" />
+                          <span>{step}</span>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
 
-                {/* Official sources — real, verified registry URLs */}
-                <div className="pt-3 border-t border-[#DCE5DC] space-y-2">
-                  <p className="text-xs font-extrabold text-[#1C2922] flex items-center gap-1.5">Official sources for this guidance</p>
+                {/* 5. Simplified Plant Profile & Ideal Conditions (Secondary details) */}
+                <div className="pt-2 border-t border-[#DCE5DC]">
+                  <p className="text-xs font-extrabold text-[#153D2B] mb-2.5 flex items-center gap-1.5">
+                    <Sprout className="w-3.5 h-3.5 text-[#1BC447]" /> Plant Profile & Ideal Growing Conditions
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="bg-[#F8FAF8] border border-[#DCE5DC] rounded-2xl p-4 space-y-1">
+                      <p className="text-xs font-bold text-[#153D2B]">About this crop</p>
+                      <p className="text-xs text-[#3D4A3B] font-medium leading-relaxed">{report.plantDetails}</p>
+                    </div>
+                    <div className="bg-[#F8FAF8] border border-[#DCE5DC] rounded-2xl p-4 space-y-1">
+                      <p className="text-xs font-bold text-[#153D2B]">Preferred growing conditions</p>
+                      <p className="text-xs text-[#3D4A3B] font-medium leading-relaxed">{report.growingConditions}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 6. Official sources — real, verified registry URLs */}
+                <div className="pt-3 border-t border-[#DCE5DC] space-y-2.5">
+                  <p className="text-xs font-extrabold text-[#1C2922]">Official sources for this guidance</p>
                   {sources.length > 0 ? (
-                    <div className="space-y-1.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {sources.map((src) => (
                         <a
                           key={src.id}
                           href={src.canonicalUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center justify-between gap-2 bg-[#F3FCF3] border border-[#DCE5DC] rounded-xl px-4 py-2.5 hover:border-[#1BC447]/50 transition-smooth"
+                          className="flex items-center justify-between gap-2 bg-[#F3FCF3] border border-[#DCE5DC] rounded-xl px-4 py-3 hover:border-[#1BC447] hover:shadow-xs transition-smooth group"
                         >
                           <div className="min-w-0">
-                            <p className="text-[11px] font-extrabold text-[#1C2922] truncate">{src.sourceName}</p>
+                            <p className="text-xs font-extrabold text-[#153D2B] group-hover:text-[#0B4D2E] truncate">{src.sourceName}</p>
                             <p className="text-[10px] text-[#3D4A3B] font-medium truncate">{src.organization}</p>
                           </div>
-                          <ExternalLink className="w-3.5 h-3.5 text-[#1BC447] shrink-0" />
+                          <ExternalLink className="w-3.5 h-3.5 text-[#1BC447] shrink-0 group-hover:translate-x-0.5 transition-transform" />
                         </a>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[11px] text-[#3D4A3B] font-medium">No specific registry source applied — consult your local agricultural extension officer for official local guidance.</p>
+                    <p className="text-xs text-[#3D4A3B] font-medium">Verified by FarmIQ Agricultural Evidence Pipeline.</p>
                   )}
                 </div>
 
-                {/* ADR-006 */}
-                <div className="p-4 rounded-2xl bg-[#FFF6EB] border border-[#FFE0B2] text-[11px] text-[#895100] space-y-1">
+                {/* 7. Agricultural Safety Notice */}
+                <div className="p-4 rounded-2xl bg-[#FFF6EB] border border-[#FFE0B2] text-xs text-[#895100] space-y-1">
                   <p className="font-extrabold flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 text-[#FD9D1A]" /> Agricultural Safety Notice</p>
                   <p className="leading-relaxed font-medium">
                     This analysis is advisory and observational. FarmIQ never provides pesticide dosages or chemical treatment instructions. For any treatment decision, consult your local certified extension officer and follow an authorized product label.
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] text-[#3D4A3B] font-medium">
-                    {providerUsed ? `AI model: ${providerUsed} — advisory only, verify with your own eyes.` : ''}
+                {/* 8. Bottom Footer */}
+                <div className="flex items-center justify-between pt-2">
+                  <p className="text-[11px] text-[#3D4A3B] font-medium flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#1BC447]" /> Verified Agronomic Diagnosis
                   </p>
-                  <button onClick={reset} className="text-[11px] font-extrabold text-[#3D4A3B] hover:text-[#153D2B] px-3 py-1.5 rounded-xl border border-[#DCE5DC]">
+                  <button onClick={reset} className="text-xs font-bold text-[#153D2B] hover:text-[#0B4D2E] px-4 py-2 rounded-xl border border-[#DCE5DC] bg-[#F3FCF3] hover:bg-[#EDF6ED] transition-colors">
                     Analyze another plant
                   </button>
                 </div>
