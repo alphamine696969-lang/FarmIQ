@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchPlaces, reverseGeocode } from '@/lib/integrations/weather/openMeteo';
 import { fetchEurostatAllPrices, MarketPriceRow } from '@/lib/integrations/markets/eurostatPrices';
+import { fetchAgmarknetPrices, getMandiApiKey } from '@/lib/integrations/markets/agmarknetPrices';
 
 const CACHE_TTL_MS = 15 * 60 * 1000;
 const cache = new Map<string, { at: number; payload: unknown }>();
@@ -8,9 +9,9 @@ const cache = new Map<string, { at: number; payload: unknown }>();
 /**
  * POST /api/markets/prices — region-based official crop prices (FIQ-100).
  * Resolves the farmer's region (picked place, typed place, or GPS coordinates)
- * to a country, then returns official Eurostat producer prices for every crop
- * the source covers. Countries outside the source's coverage return an honest
- * unavailable payload — this route never serves sample or invented prices.
+ * to a country, then returns official Agmarknet (India) or Eurostat (EU) prices.
+ * Countries outside the source's coverage return an honest unavailable payload.
+ * No sample or mock prices are ever served.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -24,6 +25,7 @@ export async function POST(req: NextRequest) {
     let countryCode = /^[A-Z]{2}$/.test(directCountry) ? directCountry : '';
     let locationLabel = labelHint;
     let country: string | undefined;
+    let state: string | undefined;
 
     if (!countryCode) {
       if (lat !== null && lon !== null) {
@@ -31,6 +33,7 @@ export async function POST(req: NextRequest) {
         if (reversed?.countryCode) {
           countryCode = reversed.countryCode;
           country = reversed.country;
+          state = reversed.admin1;
           locationLabel = locationLabel || [reversed.name, reversed.admin1, reversed.country].filter(Boolean).join(', ');
         }
       } else if (place.length >= 3) {
@@ -39,6 +42,7 @@ export async function POST(req: NextRequest) {
         if (match?.countryCode) {
           countryCode = match.countryCode;
           country = match.country;
+          state = match.admin1;
           locationLabel = [match.name, match.admin1, match.country].filter(Boolean).join(', ');
         }
       }
@@ -58,13 +62,42 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const key = `mkt|${countryCode}`;
+    const key = `mkt|${countryCode}|${state || ''}`;
     const hit = cache.get(key);
     if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
       return NextResponse.json(hit.payload);
     }
 
-    const rows: MarketPriceRow[] = await fetchEurostatAllPrices(countryCode).catch(() => []);
+    let rows: MarketPriceRow[] = [];
+    let providerName = 'Official Price Feed';
+    let noteText = '';
+
+    // Route based on region: India (Agmarknet) or EU (Eurostat)
+    if (countryCode === 'IN') {
+      const apiKey = getMandiApiKey();
+      if (!apiKey) {
+        const payload = {
+          data: {
+            available: false,
+            status: 'key_required',
+            location: { label: locationLabel || 'India', countryCode: 'IN', country: 'India' },
+            prices: [],
+            reason: 'Official Indian Mandi price feed (Agmarknet via data.gov.in) is ready. To display live APMC wholesale prices, add your data.gov.in API key in .env.local as MARKET_DATA_API_KEY or DATA_GOV_IN_API_KEY.'
+          },
+          meta: { provider: 'Agmarknet (data.gov.in)', retrievedAt: new Date().toISOString() }
+        };
+        return NextResponse.json(payload);
+      }
+
+      rows = await fetchAgmarknetPrices(state).catch(() => []);
+      providerName = 'Agmarknet (Ministry of Agriculture / data.gov.in)';
+      noteText = `Official daily Mandi wholesale prices for ${state || 'India'} from Agmarknet via data.gov.in — latest APMC modal rates per quintal.`;
+    } else {
+      rows = await fetchEurostatAllPrices(countryCode).catch(() => []);
+      providerName = 'Eurostat apri_ap_crpouta';
+      noteText = `Official producer prices for ${country || countryCode} from Eurostat — latest published period, refreshed live from the source. These are official annual statistics, not a daily market quote.`;
+    }
+
     const payload =
       rows.length > 0
         ? {
@@ -73,9 +106,9 @@ export async function POST(req: NextRequest) {
               status: 'live',
               location: { label: locationLabel || countryCode, countryCode, country },
               prices: rows,
-              note: `Official producer prices for ${country} from Eurostat — latest published period, refreshed live from the source. These are official annual statistics, not a daily market quote.`
+              note: noteText,
             },
-            meta: { provider: 'Eurostat apri_ap_crpouta', retrievedAt: new Date().toISOString() }
+            meta: { provider: providerName, retrievedAt: new Date().toISOString() }
           }
         : {
             data: {
@@ -83,10 +116,11 @@ export async function POST(req: NextRequest) {
               status: 'not_covered',
               location: { label: locationLabel || countryCode, countryCode, country },
               prices: [],
-              reason: `No live official price feed is connected for ${country} yet. Official prices currently cover the EU (Eurostat). No sample prices are ever shown — verify local rates with your local market or extension service.`
+              reason: `No live official price records found for ${locationLabel || country || countryCode}. No sample or mock prices are ever shown.`
             },
-            meta: { provider: 'Eurostat apri_ap_crpouta', retrievedAt: new Date().toISOString() }
+            meta: { provider: providerName, retrievedAt: new Date().toISOString() }
           };
+
     cache.set(key, { at: Date.now(), payload });
     return NextResponse.json(payload);
   } catch (error) {

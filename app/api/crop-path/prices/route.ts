@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchEurostatCropPrice } from '@/lib/integrations/markets/eurostatPrices';
+import { fetchAgmarknetCropPrice, getMandiApiKey } from '@/lib/integrations/markets/agmarknetPrices';
 
 const CACHE_TTL_MS = 15 * 60 * 1000;
 const cache = new Map<string, { at: number; payload: unknown }>();
 
 /**
  * POST /api/crop-path/prices — Phase 1/9 live commodity prices (v2 workflow).
- * Official Eurostat annual crop selling prices for the farmer's country.
- * Countries outside Eurostat coverage (and any provider failure) return an
+ * Official Agmarknet (India) or Eurostat (EU) crop selling prices.
+ * Countries outside coverage (and any provider failure) return an
  * honest per-crop null with a status note — never a fabricated number.
  */
 export async function POST(req: NextRequest) {
@@ -43,9 +44,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(payload);
     }
 
-    const entries = await Promise.all(
-      crops.map(async (crop: string) => [crop, await fetchEurostatCropPrice(crop, countryCode)] as const)
-    );
+    let entries: Array<readonly [string, any]> = [];
+    let providerName = 'Eurostat apri_ap_crpouta';
+    let sourceNote = '';
+
+    if (countryCode === 'IN') {
+      const apiKey = getMandiApiKey();
+      providerName = 'Agmarknet (data.gov.in)';
+      if (!apiKey) {
+        const payload = {
+          data: {
+            prices: Object.fromEntries(crops.map((c: string) => [c, null])),
+            status: 'key_required',
+            note: 'Agmarknet daily mandi prices available for India — set DATA_GOV_IN_API_KEY in .env.local to activate live APMC rates.'
+          },
+          meta: { provider: providerName, retrievedAt: new Date().toISOString() }
+        };
+        cache.set(key, { at: Date.now(), payload });
+        return NextResponse.json(payload);
+      }
+
+      entries = await Promise.all(
+        crops.map(async (crop: string) => [crop, await fetchAgmarknetCropPrice(crop)] as const)
+      );
+      sourceNote = 'Official daily Mandi modal prices from Agmarknet via data.gov.in.';
+    } else {
+      entries = await Promise.all(
+        crops.map(async (crop: string) => [crop, await fetchEurostatCropPrice(crop, countryCode)] as const)
+      );
+      sourceNote = 'Official annual prices from Eurostat for your country (latest published period — not a live market quote).';
+    }
+
     const prices = Object.fromEntries(entries);
     const anyLive = Object.values(prices).some((p) => p !== null);
 
@@ -54,10 +83,10 @@ export async function POST(req: NextRequest) {
         prices,
         status: anyLive ? 'live' : 'not_covered',
         note: anyLive
-          ? 'Official annual prices from Eurostat for your country (latest published period — not a live market quote).'
-          : `Eurostat publishes official crop prices for EU countries only — no official live price feed is connected for ${countryCode}. Verify local rates before planning.`
+          ? sourceNote
+          : `No official live price feed found for ${countryCode}. Verify local rates before planning.`
       },
-      meta: { provider: 'Eurostat apri_ap_crpouta', retrievedAt: new Date().toISOString() }
+      meta: { provider: providerName, retrievedAt: new Date().toISOString() }
     };
     cache.set(key, { at: Date.now(), payload });
     return NextResponse.json(payload);
