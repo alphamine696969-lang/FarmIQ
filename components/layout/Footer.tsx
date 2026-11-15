@@ -4,30 +4,28 @@ import { Sprout, ShieldCheck, Globe, Check } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-[#153D2B] text-white/90 border-t border-[#1C4D37] pt-16 pb-12">
+    <footer className="bg-[#0B4D2E] text-white/90 border-t border-[#135D38] pt-16 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-white/10">
           
           {/* Column 1: Brand & Principles */}
           <div className="md:col-span-1 space-y-4">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-[#1BC447] flex items-center justify-center text-[#1C2922] font-black shadow-glow-lime">
-                <Sprout className="w-5 h-5" />
-              </div>
-              <span className="font-extrabold text-2xl tracking-tight text-white">Farm<span className="text-[#1BC447]">IQ</span></span>
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <img src="/brand/logo-icon.png" alt="FarmIQ" className="w-9 h-9 object-contain group-hover:scale-105 transition-transform" />
+              <span className="font-extrabold text-2xl tracking-tight text-white font-poppins">Farm<span className="text-[#A8E063]">IQ</span></span>
             </Link>
             <p className="text-sm text-white/75 leading-relaxed">
               Global precision agricultural intelligence platform combining satellite telemetry, market benchmarks, deterministic economics, and agro-meteorology.
             </p>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0E281C] text-[#1BC447] text-xs font-bold border border-[#1C4D37]">
-              <ShieldCheck className="w-4 h-4 text-[#1BC447]" />
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#07331E] text-[#A8E063] text-xs font-bold border border-[#135D38]">
+              <ShieldCheck className="w-4 h-4 text-[#4CAF50]" />
               <span>Trust Contract Compliant</span>
             </div>
           </div>
 
           {/* Column 2: Platform Features */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#1BC447]">Capabilities</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#A8E063]">Capabilities</h4>
             <ul className="space-y-2 text-sm text-white/75">
               <li><Link href="/app/assistant" className="hover:text-white transition-colors">AI Agricultural Assistant</Link></li>
               <li><Link href="/app/markets" className="hover:text-white transition-colors">Crop Market Intelligence</Link></li>

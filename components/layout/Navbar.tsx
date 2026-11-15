@@ -17,24 +17,17 @@ export const Navbar: React.FC = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-[#F3FCF3]/90 backdrop-blur-md border-b border-[#DCE5DC]">
+    <header className="sticky top-0 z-50 bg-[#F5FBEF]/95 backdrop-blur-md border-b border-[#DCE5DC]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
-          {/* Logo & Tagline */}
+          {/* Official Farm IQ Brand Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-2xl bg-[#153D2B] flex items-center justify-center text-[#1BC447] shadow-sm group-hover:scale-105 transition-smooth border border-[#1C4D37]">
-              <Sprout className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-2xl tracking-tight text-[#153D2B]">Farm<span className="text-[#1BC447]">IQ</span></span>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-[#EDF6ED] text-[#153D2B] px-2.5 py-0.5 rounded-full border border-[#DCE5DC]">
-                  Global Telemetry
-                </span>
-              </div>
-              <p className="text-[11px] text-[#3D4A3B] font-semibold -mt-0.5 hidden sm:block">Precision Agriculture Platform</p>
-            </div>
+            <img
+              src="/brand/logo.png"
+              alt="FarmIQ"
+              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+            />
           </Link>
 
           {/* Desktop Navigation Links */}

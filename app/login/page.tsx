@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Sprout, Lock, Mail, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Lock, Mail, ShieldCheck, AlertCircle } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/auth/GoogleAuth';
 import { getStoredUserProfile, saveStoredUserProfile, UserProfile } from '@/lib/data/userState';
 
@@ -114,7 +114,7 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3.5 px-6 rounded-full bg-[#153D2B] hover:bg-[#1C4D37] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full py-3.5 px-6 rounded-full bg-[#0B4D2E] hover:bg-[#135D38] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           {loading ? 'Authenticating...' : 'Sign In'}
         </button>
@@ -122,13 +122,13 @@ function LoginForm() {
 
       <div className="pt-2 text-center text-xs text-[#3D4A3B]">
         Don't have an account yet?{' '}
-        <Link href="/signup" className="font-bold text-[#153D2B] hover:text-[#1BC447] underline transition-colors">
+        <Link href="/signup" className="font-bold text-[#0B4D2E] hover:text-[#4CAF50] underline transition-colors">
           Create an account
         </Link>
       </div>
 
       <div className="pt-3 border-t border-[#DCE5DC] flex items-center justify-center gap-1.5 text-[11px] text-[#3D4A3B]">
-        <ShieldCheck className="w-4 h-4 text-[#1BC447]" />
+        <ShieldCheck className="w-4 h-4 text-[#4CAF50]" />
         <span>Enterprise OAuth 2.0 Security</span>
       </div>
     </div>
@@ -137,17 +137,16 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-[#F3FCF3] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F5FBEF] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
-        <Link href="/" className="inline-flex items-center gap-2.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#153D2B] text-[#1BC447] flex items-center justify-center shadow-bento">
-            <Sprout className="w-7 h-7" />
-          </div>
-          <span className="font-extrabold text-3xl tracking-tight text-[#153D2B]">
-            Farm<span className="text-[#1BC447]">IQ</span>
-          </span>
+        <Link href="/" className="inline-block group">
+          <img
+            src="/brand/logo.png"
+            alt="FarmIQ"
+            className="h-16 w-auto mx-auto object-contain group-hover:scale-105 transition-transform"
+          />
         </Link>
-        <h2 className="text-2xl font-extrabold text-[#1C2922]">Sign in to your Farm Workspace</h2>
+        <h2 className="text-2xl font-extrabold text-[#0B4D2E] font-poppins">Sign in to your Farm Workspace</h2>
         <p className="text-xs text-[#3D4A3B]">Grow Smarter. Earn Better with Grounded Precision.</p>
       </div>
 

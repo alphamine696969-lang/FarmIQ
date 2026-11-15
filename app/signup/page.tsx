@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Sprout, Lock, Mail, User, Globe2, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, User, Globe2, ArrowRight, ShieldCheck } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/auth/GoogleAuth';
 import { getStoredUserProfile, saveStoredUserProfile, UserProfile } from '@/lib/data/userState';
 
@@ -36,17 +36,16 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F3FCF3] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F5FBEF] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
-        <Link href="/" className="inline-flex items-center gap-2.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#153D2B] text-[#1BC447] flex items-center justify-center shadow-bento">
-            <Sprout className="w-7 h-7" />
-          </div>
-          <span className="font-extrabold text-3xl tracking-tight text-[#153D2B]">
-            Farm<span className="text-[#1BC447]">IQ</span>
-          </span>
+        <Link href="/" className="inline-block group">
+          <img
+            src="/brand/logo.png"
+            alt="FarmIQ"
+            className="h-16 w-auto mx-auto object-contain group-hover:scale-105 transition-transform"
+          />
         </Link>
-        <h2 className="text-2xl font-extrabold text-[#1C2922]">Create your FarmIQ Account</h2>
+        <h2 className="text-2xl font-extrabold text-[#0B4D2E] font-poppins">Create your FarmIQ Account</h2>
         <p className="text-xs text-[#3D4A3B]">Start tracking economics, market prices, and evidence-grounded agronomy.</p>
       </div>
 

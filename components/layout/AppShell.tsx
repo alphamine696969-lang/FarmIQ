@@ -85,48 +85,48 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F3FCF3] flex flex-col md:flex-row text-[#1C2922] font-sans antialiased">
+    <div className="min-h-screen bg-[#F5FBEF] flex flex-col md:flex-row text-[#1C2922] font-sans antialiased">
       
       {/* Mobile Top Header */}
-      <div className="md:hidden flex items-center justify-between p-4 bg-[#153D2B] text-white border-b border-[#1C4D37] sticky top-0 z-40">
+      <div className="md:hidden flex items-center justify-between p-4 bg-[#0B4D2E] text-white border-b border-[#135D38] sticky top-0 z-40">
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-full bg-[#1C4D37] text-[#1BC447] hover:bg-[#1C4D37]/80"
+            className="p-2 rounded-full bg-[#135D38] text-[#A8E063] hover:bg-[#135D38]/80"
             aria-label="Open sidebar"
           >
             <Menu className="w-5 h-5" />
           </button>
           <Link href="/app" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-[#1BC447] text-[#1C2922] flex items-center justify-center font-bold shadow-glow-lime">
-              <Sprout className="w-4 h-4" />
-            </div>
-            <span className="font-extrabold text-lg text-white">Farm<span className="text-[#1BC447]">IQ</span></span>
+            <img src="/brand/logo-icon.png" alt="FarmIQ" className="w-8 h-8 object-contain" />
+            <span className="font-extrabold text-lg text-white font-poppins">Farm<span className="text-[#A8E063]">IQ</span></span>
           </Link>
         </div>
         <div className="flex items-center gap-2 text-xs">
-          <span className="px-3 py-1 rounded-full bg-[#EDF6ED] text-[#153D2B] font-bold border border-[#DCE5DC]">
+          <span className="px-3 py-1 rounded-full bg-[#EDF6ED] text-[#0B4D2E] font-bold border border-[#DCE5DC]">
             {profile?.preferences.preferredCurrency || 'USD'}
           </span>
-          <span className="w-2.5 h-2.5 rounded-full bg-[#1BC447] animate-pulse" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#4CAF50] animate-pulse" />
         </div>
       </div>
 
-      {/* Desktop and Mobile Sidebar (Deep Forest Green Anchor #153D2B) */}
+      {/* Desktop and Mobile Sidebar (Brand Primary #0B4D2E) */}
       <aside
-        className={`fixed md:sticky top-0 left-0 z-50 h-screen w-72 bg-[#153D2B] text-white flex flex-col justify-between border-r border-[#1C4D37] transition-transform duration-200 ease-in-out ${
+        className={`fixed md:sticky top-0 left-0 z-50 h-screen w-72 bg-[#0B4D2E] text-white flex flex-col justify-between border-r border-[#135D38] transition-transform duration-200 ease-in-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Logo Brand Header */}
-          <div className="p-5 border-b border-[#1C4D37] flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-2xl bg-[#1BC447] text-[#1C2922] flex items-center justify-center shadow-glow-lime">
-                <Sprout className="w-6 h-6" />
-              </div>
+          <div className="p-5 border-b border-[#135D38] flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <img
+                src="/brand/logo-icon.png"
+                alt="FarmIQ"
+                className="w-9 h-9 object-contain group-hover:scale-105 transition-transform"
+              />
               <div>
-                <span className="font-extrabold text-2xl tracking-tight text-white">Farm<span className="text-[#1BC447]">IQ</span></span>
+                <span className="font-extrabold text-2xl tracking-tight text-white font-poppins">Farm<span className="text-[#A8E063]">IQ</span></span>
                 <span className="block text-[10px] text-white/60 tracking-wider uppercase font-bold">Telemetry Control</span>
               </div>
             </Link>

@@ -10,12 +10,20 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Design System Core Brand
-        'leaf-lime': '#1BC447',
-        'forest-green': '#153D2B',
+        // Official Brand Kit Palette
+        brand: {
+          primary: '#0B4D2E',    // Primary Deep Forest Green
+          secondary: '#4CAF50',  // Secondary Leaf Green
+          accent: '#A8E063',     // Accent Lime Sprout
+          bg: '#F5FBEF',         // Canvas Background Cream
+        },
+
+        // Design System Core Brand (Mapped to Brand Kit)
+        'leaf-lime': '#4CAF50',
+        'forest-green': '#0B4D2E',
         'harvest-gold': '#FD9D1A',
         'atmosphere-blue': '#33B3FC',
-        'canvas-mint': '#F3FCF3',
+        'canvas-mint': '#F5FBEF',
         'card-surface': '#FFFFFF',
         'surface-subtle': '#EDF6ED',
         'border-leaf': '#DCE5DC',
@@ -25,21 +33,21 @@ module.exports = {
 
         // Token mappings & backward-compatibility aliases
         forest: {
-          DEFAULT: '#153D2B',
-          dark: '#0E281C',
-          light: '#1C4D37',
+          DEFAULT: '#0B4D2E',
+          dark: '#07331E',
+          light: '#135D38',
         },
         primaryGreen: {
-          DEFAULT: '#1BC447',
-          hover: '#17ac3e',
-          dark: '#006E22',
+          DEFAULT: '#4CAF50',
+          hover: '#43A047',
+          dark: '#2E7D32',
           light: '#EDF6ED',
         },
         limeFresh: {
-          DEFAULT: '#1BC447',
+          DEFAULT: '#4CAF50',
           light: '#EDF6ED',
         },
-        warmOffWhite: '#F3FCF3',
+        warmOffWhite: '#F5FBEF',
         darkText: '#1C2922',
         secondaryText: '#3D4A3B',
         cardBorder: '#DCE5DC',
@@ -47,7 +55,7 @@ module.exports = {
         alertError: '#BA1A1A',
 
         // Material / Enterprise Token Specs
-        surface: '#eefdf2',
+        surface: '#F5FBEF',
         'surface-dim': '#ceded3',
         'surface-bright': '#eefdf2',
         'surface-container-lowest': '#ffffff',
@@ -57,18 +65,18 @@ module.exports = {
         'surface-container-highest': '#d7e6db',
         'on-surface': '#111e18',
         'on-surface-variant': '#3d4a3b',
-        'inverse-surface': '#26332c',
-        'inverse-on-surface': '#e5f5e9',
+        'inverse-surface': '#0B4D2E',
+        'inverse-on-surface': '#F5FBEF',
         outline: '#6d7b69',
         'outline-variant': '#bccbb7',
-        'surface-tint': '#006e22',
+        'surface-tint': '#4CAF50',
         primary: {
-          DEFAULT: '#1BC447',
-          dark: '#006e22',
-          container: '#1bc447',
+          DEFAULT: '#4CAF50',
+          dark: '#0B4D2E',
+          container: '#4CAF50',
         },
         secondary: {
-          DEFAULT: '#153D2B',
+          DEFAULT: '#0B4D2E',
           container: '#c1edd2',
         },
         tertiary: {
@@ -77,7 +85,8 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ["'Plus Jakarta Sans'", "system-ui", "-apple-system", "sans-serif"],
+        sans: ["'Poppins'", "'Plus Jakarta Sans'", "system-ui", "-apple-system", "sans-serif"],
+        poppins: ["'Poppins'", "sans-serif"],
       },
       borderRadius: {
         sm: '0.5rem',

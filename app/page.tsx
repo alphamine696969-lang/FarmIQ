@@ -481,12 +481,12 @@ export default function HomePage() {
       </section>
 
       {/* Global Impact CTA Banner */}
-      <section className="py-20 bg-[#153D2B] text-white relative overflow-hidden">
+      <section className="py-20 bg-[#0B4D2E] text-white relative overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 text-center space-y-6 relative z-10">
-          <div className="w-14 h-14 rounded-2xl bg-[#1BC447] text-[#1C2922] flex items-center justify-center mx-auto shadow-glow-lime">
-            <Sprout className="w-8 h-8" />
+          <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mx-auto shadow-floating p-2">
+            <img src="/brand/logo-icon.png" alt="FarmIQ" className="w-12 h-12 object-contain" />
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-poppins">
             Ready to Make Evidence-Informed Farm Decisions?
           </h2>
           <p className="text-white/80 text-base sm:text-lg max-w-2xl mx-auto font-medium">
@@ -495,7 +495,7 @@ export default function HomePage() {
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/app"
-              className="px-8 py-4 rounded-full bg-[#1BC447] hover:bg-[#16a73c] text-[#1C2922] font-extrabold text-base shadow-glow-lime transition-smooth inline-flex items-center gap-2"
+              className="px-8 py-4 rounded-full bg-[#4CAF50] hover:bg-[#43A047] text-white font-extrabold text-base shadow-glow-lime transition-smooth inline-flex items-center gap-2"
             >
               <span>Launch FarmIQ Workspace</span>
               <ArrowRight className="w-5 h-5" />
