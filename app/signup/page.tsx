@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Sprout, Lock, Mail, User, Globe2, ArrowRight, ShieldCheck } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/auth/GoogleAuth';
-import { getStoredUserProfile, saveStoredUserProfile } from '@/lib/data/userState';
+import { getStoredUserProfile, saveStoredUserProfile, UserProfile } from '@/lib/data/userState';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function SignupPage() {
     
     // Save new user profile locally
     const existing = getStoredUserProfile();
-    const updated = {
+    const updated: UserProfile = {
       ...existing,
       displayName: name.trim() || 'Farm Owner',
       email: email.trim(),

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Sprout, Lock, Mail, ShieldCheck, AlertCircle } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/auth/GoogleAuth';
-import { getStoredUserProfile, saveStoredUserProfile } from '@/lib/data/userState';
+import { getStoredUserProfile, saveStoredUserProfile, UserProfile } from '@/lib/data/userState';
 
 function LoginForm() {
   const router = useRouter();
@@ -23,11 +23,12 @@ function LoginForm() {
 
     // Save email sign-in profile
     const existing = getStoredUserProfile();
-    saveStoredUserProfile({
+    const updated: UserProfile = {
       ...existing,
       email: email.trim() || existing.email,
       authProvider: 'email',
-    });
+    };
+    saveStoredUserProfile(updated);
 
     setTimeout(() => {
       router.push('/app');
