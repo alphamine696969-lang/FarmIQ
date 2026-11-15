@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchOpenMeteoForecast, reverseGeocode } from '@/lib/integrations/weather/openMeteo';
+import { fetchNasaPowerClimatology } from '@/lib/integrations/weather/nasaPower';
 import { FarmWeatherSnapshot, AgroWeatherForecastDay, AgroAlert } from '@/lib/data/weatherData';
 
 function getWeatherCondition(code: number | null): { condition: string; icon: string } {
@@ -41,7 +42,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const snapshot = await fetchOpenMeteoForecast(lat, lon, 7);
+    const [snapshot, nasaPower] = await Promise.all([
+      fetchOpenMeteoForecast(lat, lon, 7),
+      fetchNasaPowerClimatology(lat, lon).catch((err) => {
+        console.warn('NASA POWER non-critical error:', err);
+        return null;
+      }),
+    ]);
     const resolvedName = locationName !== 'Field Location' 
       ? locationName 
       : (await reverseGeocode(lat, lon))?.name || `Coords: ${lat.toFixed(3)}, ${lon.toFixed(3)}`;
@@ -150,13 +157,16 @@ export async function GET(req: NextRequest) {
         windSpeedKmh: forecast[0]?.windSpeedKmh ?? 10,
         soilTempC: Math.round(currentTemp - 2),
         soilMoisturePercent: Math.min(85, Math.max(20, Math.round(35 + (forecast[0]?.precipitationMm ?? 0) * 4))),
-        solarRadiationWm2: 550,
+        solarRadiationWm2: nasaPower?.currentMonthBenchmark?.solarMJ 
+          ? Math.round(nasaPower.currentMonthBenchmark.solarMJ * 23.15) 
+          : 520,
         dewPointC: Math.round(currentTemp - (100 - currentHumidity) / 5),
         uvIndex: forecast[0] ? Math.round(forecast[0].tempMaxC / 5) : 5,
         condition: forecast[0]?.condition ?? 'Clear Sky',
       },
       forecast,
       alerts,
+      nasaPower: nasaPower || null,
     };
 
     return NextResponse.json({

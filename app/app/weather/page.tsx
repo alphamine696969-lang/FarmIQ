@@ -18,7 +18,10 @@ import {
   Crosshair,
   Search,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  CloudRain,
+  Satellite,
+  ExternalLink,
 } from 'lucide-react';
 
 interface GeoSuggestion {
@@ -293,6 +296,116 @@ export default function WeatherPage() {
 
               </div>
             </div>
+
+            {/* NASA POWER Agroclimatology Bento Card */}
+            {data.nasaPower && (
+              <div className="bg-white rounded-3xl border border-[#DCE5DC] p-7 sm:p-9 shadow-bento space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#DCE5DC] pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-[#0B4D2E] text-[#A8E063] flex items-center justify-center font-bold shadow-sm">
+                      <Satellite className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-extrabold text-[#1C2922]">NASA POWER Satellite Agroclimatology</h3>
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#EDF6ED] text-[#0B4D2E] px-2 py-0.5 rounded-full border border-[#DCE5DC]">
+                          Community: AG
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#3D4A3B] mt-0.5">
+                        {data.nasaPower.provenance.source} • {data.nasaPower.provenance.datasetRange}
+                      </p>
+                    </div>
+                  </div>
+                  <a
+                    href="https://power.larc.nasa.gov/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-bold text-[#0B4D2E] hover:text-[#4CAF50] inline-flex items-center gap-1 transition-colors"
+                  >
+                    <span>NASA POWER Portal</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+
+                {/* Key NASA Metrics */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                  <div className="p-5 rounded-2xl bg-[#F5FBEF] border border-[#DCE5DC] space-y-1">
+                    <div className="flex items-center justify-between text-[#3D4A3B]">
+                      <span className="font-bold">Solar Irradiance (PAR)</span>
+                      <Sun className="w-4 h-4 text-[#FD9D1A]" />
+                    </div>
+                    <p className="text-2xl font-black text-[#1C2922] tabular-nums">
+                      {data.nasaPower.currentMonthBenchmark.solarMJ} <span className="text-xs font-normal">MJ/m²/day</span>
+                    </p>
+                    <p className="text-[11px] text-[#3D4A3B]">Solar potential ({data.nasaPower.currentMonthBenchmark.month})</p>
+                  </div>
+
+                  <div className="p-5 rounded-2xl bg-[#F5FBEF] border border-[#DCE5DC] space-y-1">
+                    <div className="flex items-center justify-between text-[#3D4A3B]">
+                      <span className="font-bold">25-Yr Precip. Norm</span>
+                      <CloudRain className="w-4 h-4 text-[#33B3FC]" />
+                    </div>
+                    <p className="text-2xl font-black text-[#1C2922] tabular-nums">
+                      {data.nasaPower.currentMonthBenchmark.precipMmPerDay} <span className="text-xs font-normal">mm/day</span>
+                    </p>
+                    <p className="text-[11px] text-[#3D4A3B]">Annual: {data.nasaPower.annualAveragePrecipMm} mm</p>
+                  </div>
+
+                  <div className="p-5 rounded-2xl bg-[#F5FBEF] border border-[#DCE5DC] space-y-1">
+                    <div className="flex items-center justify-between text-[#3D4A3B]">
+                      <span className="font-bold">Historical Temp Norm</span>
+                      <Thermometer className="w-4 h-4 text-[#0B4D2E]" />
+                    </div>
+                    <p className="text-2xl font-black text-[#1C2922] tabular-nums">
+                      {data.nasaPower.currentMonthBenchmark.tempMeanC}°C
+                    </p>
+                    <p className="text-[11px] text-[#3D4A3B]">Annual baseline: {data.nasaPower.annualAverageTempC}°C</p>
+                  </div>
+
+                  <div className="p-5 rounded-2xl bg-[#F5FBEF] border border-[#DCE5DC] space-y-1">
+                    <div className="flex items-center justify-between text-[#3D4A3B]">
+                      <span className="font-bold">Terrain Elevation</span>
+                      <Layers className="w-4 h-4 text-teal-600" />
+                    </div>
+                    <p className="text-2xl font-black text-[#1C2922] tabular-nums">
+                      {data.nasaPower.provenance.elevationMeters ? `${Math.round(data.nasaPower.provenance.elevationMeters)}m` : 'Sea Level'}
+                    </p>
+                    <p className="text-[11px] text-[#3D4A3B]">NASA MERRA-2 terrain surface</p>
+                  </div>
+                </div>
+
+                {/* Monthly Solar & Precip Distribution (12-Month Climatology) */}
+                <div className="pt-2 space-y-3">
+                  <div className="flex items-center justify-between text-xs font-bold text-[#1C2922]">
+                    <span>NASA 25-Year Agroclimatological Monthly Profile</span>
+                    <span className="text-[11px] text-[#3D4A3B] font-medium">Solar Radiation (MJ/m²/day) & Rain (mm/day)</span>
+                  </div>
+                  <div className="grid grid-cols-6 sm:grid-cols-12 gap-2 text-center text-[10px]">
+                    {Object.entries(data.nasaPower.solarRadiationMonthly)
+                      .filter(([m]) => m !== 'ANN')
+                      .map(([month, solar]) => {
+                        const isCurrent = month === data.nasaPower?.currentMonthBenchmark.month;
+                        const rain = data.nasaPower?.precipitationMonthly[month] ?? 0;
+                        return (
+                          <div
+                            key={month}
+                            className={`p-2.5 rounded-xl border transition-colors ${
+                              isCurrent
+                                ? 'bg-[#EDF6ED] border-[#0B4D2E] text-[#0B4D2E] font-extrabold ring-1 ring-[#0B4D2E]'
+                                : 'bg-[#F5FBEF]/60 border-[#DCE5DC] text-[#3D4A3B]'
+                            }`}
+                          >
+                            <p className="font-bold text-[11px]">{month}</p>
+                            <p className="text-xs font-black text-[#FD9D1A] mt-1">{solar}</p>
+                            <p className="text-[10px] text-[#33B3FC] font-semibold">{rain}mm</p>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Agro Alerts Bento Cards */}
             {data.alerts.length > 0 && (

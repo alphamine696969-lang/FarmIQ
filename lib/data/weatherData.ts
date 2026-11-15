@@ -52,6 +52,31 @@ export interface FarmWeatherSnapshot {
   };
   forecast: AgroWeatherForecastDay[];
   alerts: AgroAlert[];
+  nasaPower?: {
+    solarRadiationMonthly: Record<string, number>;
+    precipitationMonthly: Record<string, number>;
+    relativeHumidityMonthly: Record<string, number>;
+    temperatureMeanMonthly: Record<string, number>;
+    temperatureMaxMonthly: Record<string, number>;
+    temperatureMinMonthly: Record<string, number>;
+    annualAverageSolarMJ: number;
+    annualAveragePrecipMm: number;
+    annualAverageTempC: number;
+    currentMonthBenchmark: {
+      month: string;
+      solarMJ: number;
+      precipMmPerDay: number;
+      tempMeanC: number;
+    };
+    provenance: {
+      source: string;
+      datasetRange: string;
+      community: string;
+      elevationMeters?: number;
+      coordinates: [number, number];
+    };
+    retrievedAt: string;
+  } | null;
 }
 
 export const SAMPLE_WEATHER_DATA: FarmWeatherSnapshot = {
