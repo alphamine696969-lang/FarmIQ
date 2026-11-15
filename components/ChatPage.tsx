@@ -56,8 +56,8 @@ const ACTION_LABEL: Record<ActionState, string> = {
 };
 
 const PLACEHOLDER: Record<Mode, string> = {
-  ask: "Ask Farm IQ about your farm…",
-  plan: "Describe what you want to plan…",
+  ask: "How can I help you with your crops today?",
+  plan: "Describe what you want to plan for this season…",
 };
 
 function sleep(ms: number, signal: AbortSignal) {
@@ -440,7 +440,7 @@ export default function ChatPage({
   };
 
   return (
-    <div className="app">
+    <div className={`app ${messages.length === 0 ? "is-empty" : "has-messages"}`}>
       <div id="msgs" ref={logRef} role="log" aria-live="polite">
         {messages.length === 0 ? (
           <div className="hero">
@@ -451,21 +451,6 @@ export default function ChatPage({
             <p className="hero-sub">
               Ask FarmIQ about crop pathology, soil nutrients, weather forecasts, or seasonal field planning.
             </p>
-            <div className="sugs">
-              {suggestions.map((s) => (
-                <button
-                  key={s}
-                  className="sug"
-                  type="button"
-                  onClick={() => {
-                    setText(s.replace(/^[^\w\s]+\s*/, ''));
-                    taRef.current?.focus();
-                  }}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
           </div>
         ) : (
           messages.map((m) => <MessageRow key={m.id} msg={m} />)
@@ -600,6 +585,49 @@ export default function ChatPage({
           <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
           <input ref={docRef} type="file" accept=".pdf,.csv,.txt" multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
         </div>
+
+        {messages.length === 0 && (
+          <>
+            <div className="composer-sub-bar">
+              <div className="sub-bar-left">
+                <button
+                  className="sub-chip"
+                  type="button"
+                  aria-label="Active field context"
+                  onClick={() => setMenu(menu === "ctx" ? null : "ctx")}
+                >
+                  <span className="dot" />
+                  <span>Field: <strong>{field}</strong></span>
+                  <ChevronIcon />
+                </button>
+              </div>
+              <div className="sub-bar-right">
+                <span className="rag-badge">
+                  <span className="pulse-dot" />
+                  <span>Grounded Agronomic Intelligence</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="sugs">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  className="sug"
+                  type="button"
+                  onClick={() => {
+                    const cleanText = s.replace(/^[^\w\s]+\s*/, '');
+                    setText(cleanText);
+                    taRef.current?.focus();
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
         <p className="fine">Farm IQ can make mistakes. Check important advice.</p>
       </div>
     </div>
