@@ -3,6 +3,33 @@ import { runChatPipeline } from '@/lib/services/assistant/pipeline';
 
 export const maxDuration = 180;
 
+function normalizeAgronomyText(text: string): string {
+  let cleaned = text;
+
+  // 1. Scrub internal knowledge-base tags like [Crop Profiles / kb_diseases] or [CHUNK 1 — ...]
+  cleaned = cleaned
+    .replace(/\[\s*(?:Crop Profiles\s*\/\s*)?kb_[a-z0-9_-]+[^\]]*\]/gi, '')
+    .replace(/\[\s*CHUNK\s*\d+[^\]]*\]/gi, '')
+    .replace(/\[\s*Source:\s*kb_[a-z0-9_-]+[^\]]*\]/gi, '');
+
+  // 2. Remove unfinished cutoff phrases at the end like "**Important:** I don't have"
+  cleaned = cleaned
+    .replace(/\s*\*\*Important:\*\*\s*(?:I don'?t have|Note:)?\s*$/i, '')
+    .replace(/\s*\*\*(?:Note|Warning|Important):\*\*\s*$/i, '')
+    .trim();
+
+  // 3. Ensure bullet points start on their own lines
+  cleaned = cleaned.replace(/([^\n])\s+[-•]\s+/g, '$1\n- ');
+
+  // 4. Ensure bold section headings start on their own lines
+  cleaned = cleaned.replace(/([^\n])\s+(\*\*[^*:]+:\*\*)/g, '$1\n\n$2\n');
+
+  // 5. Clean up duplicate newlines
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n').trim();
+
+  return cleaned;
+}
+
 /**
  * POST /api/chat — Plain-text streaming chat route for ChatPage.
  * Expects JSON or FormData with message, mode ('ask' | 'plan'), field, and optional files.
@@ -51,7 +78,7 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await runChatPipeline({ message: prompt });
-    let answerText = result.answer;
+    let answerText = normalizeAgronomyText(result.answer);
 
     // Append safety advisory warnings if present
     if (result.warnings && result.warnings.length > 0) {

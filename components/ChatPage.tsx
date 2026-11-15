@@ -229,22 +229,172 @@ const FileIcon = () => (
 );
 
 /* ------------------------------------------------------------------ */
-/* Message list                                                        */
+/* Rich Markdown Message List                                         */
 /* ------------------------------------------------------------------ */
 
-function BotText({ text }: { text: string }) {
-  // Each word is its own element, so newly arrived words ease in.
-  return (
-    <>
-      {text.split(/(\s+)/).map((part, i) =>
-        /^\s+$/.test(part) ? part : (
-          <span className="fiq-w" key={i}>
-            {part}
+function renderInline(text: string, isStreaming = false): ReactNode {
+  // Regex to match **bold**, *italic*, and [links](url)
+  const regex = /(\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\))/g;
+  const parts = text.split(regex);
+
+  return parts.map((part, index) => {
+    if (!part) return null;
+
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      const inner = part.slice(2, -2);
+      return (
+        <strong key={index} className="fiq-bold">
+          {renderInline(inner, isStreaming)}
+        </strong>
+      );
+    }
+
+    if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
+      const inner = part.slice(1, -1);
+      return (
+        <em key={index} className="fiq-em">
+          {inner}
+        </em>
+      );
+    }
+
+    const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (linkMatch) {
+      return (
+        <a
+          key={index}
+          href={linkMatch[2]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fiq-link"
+        >
+          {linkMatch[1]}
+        </a>
+      );
+    }
+
+    if (isStreaming) {
+      return part.split(/(\s+)/).map((w, wi) =>
+        /^\s+$/.test(w) ? (
+          w
+        ) : (
+          <span className="fiq-w" key={`${index}-${wi}`}>
+            {w}
           </span>
-        ),
-      )}
-    </>
-  );
+        )
+      );
+    }
+
+    return part;
+  });
+}
+
+function BotText({ text, isStreaming = false }: { text: string; isStreaming?: boolean }) {
+  if (!text) return null;
+
+  const lines = text.split('\n');
+  const blocks: ReactNode[] = [];
+  let listItems: string[] = [];
+  let isNumbered = false;
+
+  const flushList = () => {
+    if (listItems.length > 0) {
+      const items = listItems.map((item, idx) => (
+        <li key={idx} className="fiq-li">
+          {renderInline(item, isStreaming)}
+        </li>
+      ));
+      if (isNumbered) {
+        blocks.push(
+          <ol key={`ol-${blocks.length}`} className="fiq-num-list">
+            {items}
+          </ol>
+        );
+      } else {
+        blocks.push(
+          <ul key={`ul-${blocks.length}`} className="fiq-list">
+            {items}
+          </ul>
+        );
+      }
+      listItems = [];
+      isNumbered = false;
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
+    const trimmed = rawLine.trim();
+
+    if (!trimmed) {
+      flushList();
+      continue;
+    }
+
+    // Safety Advisory callout card
+    if (trimmed.startsWith('⚠️ Agricultural Safety Advisory') || trimmed.startsWith('⚠️ Safety:')) {
+      flushList();
+      blocks.push(
+        <div key={`adv-${i}`} className="fiq-advisory">
+          <div className="fiq-advisory-badge">⚠️ Agricultural Safety Advisory</div>
+          <p>{trimmed.replace(/^⚠️\s*(?:Agricultural Safety Advisory:?)?\s*/, '')}</p>
+        </div>
+      );
+      continue;
+    }
+
+    // Sources Header
+    if (trimmed.startsWith('Verified Sources:')) {
+      flushList();
+      blocks.push(
+        <div key={`src-${i}`} className="fiq-sources-header">
+          🌱 <strong>Verified Agronomic Sources:</strong>
+        </div>
+      );
+      continue;
+    }
+
+    // Bullet item (- item, * item, • item)
+    const bulletMatch = trimmed.match(/^[-*•]\s+(.*)$/);
+    if (bulletMatch) {
+      if (isNumbered) flushList();
+      listItems.push(bulletMatch[1]);
+      continue;
+    }
+
+    // Numbered item (1. item, 2. item)
+    const numMatch = trimmed.match(/^\d+\.\s+(.*)$/);
+    if (numMatch) {
+      if (!isNumbered) flushList();
+      isNumbered = true;
+      listItems.push(numMatch[1]);
+      continue;
+    }
+
+    // Headings (### Title or **Title:**)
+    const headingMatch = trimmed.match(/^(?:###\s*|\*\*)([^*#]+)\*\*?:?$/);
+    if (headingMatch && trimmed.length < 90) {
+      flushList();
+      blocks.push(
+        <h4 key={`h-${i}`} className="fiq-h4">
+          {headingMatch[1].replace(/:$/, '')}
+        </h4>
+      );
+      continue;
+    }
+
+    flushList();
+
+    blocks.push(
+      <p key={`p-${i}`} className="fiq-p">
+        {renderInline(trimmed, isStreaming)}
+      </p>
+    );
+  }
+
+  flushList();
+
+  return <div className="fiq-bot-content">{blocks}</div>;
 }
 
 function MessageRow({ msg }: { msg: Message }) {
@@ -259,10 +409,17 @@ function MessageRow({ msg }: { msg: Message }) {
     );
   }
   return (
-    <div className="row">
+    <div className="row bot">
+      <div className="bot-avatar" aria-hidden="true">
+        <Sprout size={18} still />
+      </div>
       <div className="bub">
-        {msg.status === "typing" ? <Typing /> : <BotText text={msg.text} />}
-        {msg.status === "stopped" && <small>Response stopped.</small>}
+        {msg.status === "typing" ? (
+          <Typing />
+        ) : (
+          <BotText text={msg.text} isStreaming={msg.status === "streaming"} />
+        )}
+        {msg.status === "stopped" && <small className="fiq-stopped">Response stopped.</small>}
       </div>
     </div>
   );

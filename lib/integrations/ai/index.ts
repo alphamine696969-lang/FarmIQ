@@ -147,7 +147,7 @@ export async function generateAnswer(
 
   const raw = await chatCompletion({
     model: status.generationModel,
-    max_tokens: 1000,
+    max_tokens: 2048,
     temperature: 0.1,
     messages: [{ role: 'system' as const, content: systemPrompt }, ...messages]
   }, GENERATION_TIMEOUT_MS);
