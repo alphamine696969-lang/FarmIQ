@@ -192,8 +192,8 @@ export default function CropAdvisorPage() {
         {/* Location + inputs */}
         <div className="bg-white rounded-3xl border border-[#DCE5DC] p-6 shadow-bento space-y-5">
           <div className="flex items-center gap-2.5 border-b border-[#DCE5DC] pb-3.5">
-            <div className="w-8 h-8 rounded-xl bg-[#EDF6ED] text-[#153D2B] flex items-center justify-center border border-[#DCE5DC]">
-              <MapPin className="w-4 h-4 text-[#1BC447]" />
+            <div className="w-9 h-9 rounded-2xl bg-[#EDF6ED] text-[#153D2B] flex items-center justify-center border border-[#DCE5DC]">
+              <MapPin className="w-5 h-5 text-[#1BC447]" />
             </div>
             <h3 className="text-sm font-extrabold text-[#1C2922]">Step 1 — Choose your location or region</h3>
           </div>

@@ -42,7 +42,7 @@ export default function SignupPage() {
           <img
             src="/brand/logo.png"
             alt="FarmIQ"
-            className="h-16 w-auto mx-auto object-contain group-hover:scale-105 transition-transform"
+            className="h-16 sm:h-20 w-auto mx-auto object-contain group-hover:scale-105 transition-transform"
           />
         </Link>
         <h2 className="text-2xl font-extrabold text-[#0B4D2E] font-poppins">Create your FarmIQ Account</h2>

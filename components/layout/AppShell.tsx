@@ -97,9 +97,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <Link href="/app" className="flex items-center gap-2">
-            <img src="/brand/logo-icon.png" alt="FarmIQ" className="w-8 h-8 object-contain" />
-            <span className="font-extrabold text-lg text-white font-poppins">Farm<span className="text-[#A8E063]">IQ</span></span>
+          <Link href="/app" className="flex items-center gap-2.5">
+            <img src="/brand/logo-icon.png" alt="FarmIQ" className="w-9 h-9 object-contain shrink-0" />
+            <span className="font-extrabold text-xl text-white font-poppins">Farm<span className="text-[#A8E063]">IQ</span></span>
           </Link>
         </div>
         <div className="flex items-center gap-2 text-xs">
@@ -119,11 +119,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <div className="flex flex-col h-full">
           {/* Logo Brand Header */}
           <div className="p-5 border-b border-[#135D38] flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5 group">
+            <Link href="/" className="flex items-center gap-3 group">
               <img
                 src="/brand/logo-icon.png"
                 alt="FarmIQ"
-                className="w-9 h-9 object-contain group-hover:scale-105 transition-transform"
+                className="w-10 h-10 object-contain group-hover:scale-105 transition-transform shrink-0"
               />
               <div>
                 <span className="font-extrabold text-2xl tracking-tight text-white font-poppins">Farm<span className="text-[#A8E063]">IQ</span></span>
@@ -200,8 +200,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-[#1C2922]' : 'text-[#1BC447]'}`} />
-                    <span>{item.label}</span>
+                    <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-[#1C2922]' : 'text-[#1BC447]'}`} />
+                    <span className="text-sm font-semibold">{item.label}</span>
                   </div>
                   {item.badge && (
                     <span

@@ -10,8 +10,8 @@ export const Footer: React.FC = () => {
           
           {/* Column 1: Brand & Principles */}
           <div className="md:col-span-1 space-y-4">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <img src="/brand/logo-icon.png" alt="FarmIQ" className="w-9 h-9 object-contain group-hover:scale-105 transition-transform" />
+            <Link href="/" className="flex items-center gap-3 group">
+              <img src="/brand/logo-icon.png" alt="FarmIQ" className="w-10 h-10 object-contain group-hover:scale-105 transition-transform shrink-0" />
               <span className="font-extrabold text-2xl tracking-tight text-white font-poppins">Farm<span className="text-[#A8E063]">IQ</span></span>
             </Link>
             <p className="text-sm text-white/75 leading-relaxed">

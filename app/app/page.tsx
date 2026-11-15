@@ -254,13 +254,13 @@ export default function DashboardPage() {
             )}
 
             {/* Quick Actions Bar */}
-            <div className="pt-4 border-t border-[#DCE5DC] grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="pt-4 border-t border-[#DCE5DC] grid grid-cols-2 sm:grid-cols-5 gap-3">
               <Link
                 href="/app/assistant"
                 className="p-3.5 rounded-2xl bg-[#EDF6ED] hover:bg-white text-center text-xs font-bold text-[#1C2922] border border-[#DCE5DC] hover:border-[#1BC447]/60 shadow-xs transition-smooth flex flex-col items-center gap-2"
               >
-                <div className="w-8 h-8 rounded-xl bg-white text-[#153D2B] flex items-center justify-center border border-[#DCE5DC]">
-                  <Bot className="w-4 h-4 text-[#1BC447]" />
+                <div className="w-10 h-10 rounded-2xl bg-white text-[#153D2B] flex items-center justify-center border border-[#DCE5DC] shadow-xs">
+                  <Bot className="w-5 h-5 text-[#1BC447]" />
                 </div>
                 <span>Ask Agronomist</span>
               </Link>
@@ -268,8 +268,8 @@ export default function DashboardPage() {
                 href="/app/disease"
                 className="p-3.5 rounded-2xl bg-[#EDF6ED] hover:bg-white text-center text-xs font-bold text-[#1C2922] border border-[#DCE5DC] hover:border-[#1BC447]/60 shadow-xs transition-smooth flex flex-col items-center gap-2"
               >
-                <div className="w-8 h-8 rounded-xl bg-white text-[#153D2B] flex items-center justify-center border border-[#DCE5DC]">
-                  <ScanLine className="w-4 h-4 text-[#1BC447]" />
+                <div className="w-10 h-10 rounded-2xl bg-white text-[#153D2B] flex items-center justify-center border border-[#DCE5DC] shadow-xs">
+                  <ScanLine className="w-5 h-5 text-[#1BC447]" />
                 </div>
                 <span>Scan Disease</span>
               </Link>
@@ -277,8 +277,8 @@ export default function DashboardPage() {
                 href="/app/crop-advisor"
                 className="p-3.5 rounded-2xl bg-[#EDF6ED] hover:bg-white text-center text-xs font-bold text-[#1C2922] border border-[#DCE5DC] hover:border-[#1BC447]/60 shadow-xs transition-smooth flex flex-col items-center gap-2"
               >
-                <div className="w-8 h-8 rounded-xl bg-white text-[#153D2B] flex items-center justify-center border border-[#DCE5DC]">
-                  <Compass className="w-4 h-4 text-[#1BC447]" />
+                <div className="w-10 h-10 rounded-2xl bg-white text-[#153D2B] flex items-center justify-center border border-[#DCE5DC] shadow-xs">
+                  <Compass className="w-5 h-5 text-[#1BC447]" />
                 </div>
                 <span>Crop Suitability</span>
               </Link>
@@ -286,8 +286,8 @@ export default function DashboardPage() {
                 href="/app/crop-path"
                 className="p-3.5 rounded-2xl bg-[#EDF6ED] hover:bg-white text-center text-xs font-bold text-[#1C2922] border border-[#DCE5DC] hover:border-[#1BC447]/60 shadow-xs transition-smooth flex flex-col items-center gap-2"
               >
-                <div className="w-8 h-8 rounded-xl bg-white text-[#153D2B] flex items-center justify-center border border-[#DCE5DC]">
-                  <Sprout className="w-4 h-4 text-[#1BC447]" />
+                <div className="w-10 h-10 rounded-2xl bg-white text-[#153D2B] flex items-center justify-center border border-[#DCE5DC] shadow-xs">
+                  <Sprout className="w-5 h-5 text-[#1BC447]" />
                 </div>
                 <span>CropPath Tracker</span>
               </Link>
@@ -295,8 +295,8 @@ export default function DashboardPage() {
                 href="/app/markets"
                 className="p-3.5 rounded-2xl bg-[#EDF6ED] hover:bg-white text-center text-xs font-bold text-[#1C2922] border border-[#DCE5DC] hover:border-[#1BC447]/60 shadow-xs transition-smooth flex flex-col items-center gap-2"
               >
-                <div className="w-8 h-8 rounded-xl bg-white text-[#153D2B] flex items-center justify-center border border-[#DCE5DC]">
-                  <TrendingUp className="w-4 h-4 text-[#1BC447]" />
+                <div className="w-10 h-10 rounded-2xl bg-white text-[#153D2B] flex items-center justify-center border border-[#DCE5DC] shadow-xs">
+                  <TrendingUp className="w-5 h-5 text-[#1BC447]" />
                 </div>
                 <span>Market Prices</span>
               </Link>

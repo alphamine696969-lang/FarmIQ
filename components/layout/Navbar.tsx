@@ -26,7 +26,7 @@ export const Navbar: React.FC = () => {
             <img
               src="/brand/logo.png"
               alt="FarmIQ"
-              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+              className="h-11 sm:h-12 w-auto object-contain group-hover:scale-105 transition-transform"
             />
           </Link>
 
