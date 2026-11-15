@@ -5,6 +5,16 @@ All notable changes to FarmIQ should be documented here. Follow a simple Keep a 
 ## [Unreleased]
 
 ### Changed
+- **Web research rebuilt as keyless model-initiated tools (ADR-019, replaces ADR-018's key-based search)** — removed the Tavily/Brave/Serper adapter entirely (no search-provider keys anywhere). New `lib/integrations/webFetch/index.ts` provides two OpenAI function-calling tools the **assistant model itself invokes before answering** (ChatGPT-style, bounded to 3 LLM turns / 4 tool executions per answer): `web_search` (keyless Bing News RSS — robots-allowed — merged with the Wikipedia search API) and `web_fetch` (reads any public page: http(s)+standard ports only, private/loopback/metadata/`.local` hosts blocked, DNS + manual-redirect re-validation, 8s/2MB caps, HTML→text). The system templates now instruct the model to research **for every answer — not only news** — cite only actually-returned URLs, and treat page content as untrusted. Research items flow into the pipeline's `sources[]` cards with a mandatory limitation line. Marketplace news + disease scanner call the same keyless `web_search` directly. Off switch: `WEB_FETCH_DISABLED=1`. Tool inventory: `docs/AI_TOOLS.md`.
+
+### Added
+- **Web-fetch tool for all AI surfaces (ADR-019)** — assistant tool loop, `POST /api/markets/news` (latest agriculture news for the selected location), and disease-scanner context, all with zero API keys. SSRF-guarded, honest failure states — never fake headlines or citations.
+- **Markets "Latest news for your region" card** — when a region is chosen (search or GPS), the Markets page also fetches recency-biased web results via `/api/markets/news` and lists live source links (title, snippet, domain, date).
+
+### Changed
+- **Preloaded assistant static resources removed (ADR-018)** — deleted `STATIC_CHUNKS` (hard-coded agronomy/scheme/market/feature blurbs) from `knowledgeIndex.ts`. Offline fallback is now only approved crop + disease profiles; freshness comes from the web-research tools. Pipeline layer order is unchanged.
+
+### Changed
 - **Market Prices rebuilt on region-based official data — all mock removed (FIQ-100)** — deleted `INITIAL_MARKET_OBSERVATIONS` (and its API/page/dashboard/landing usages); new `POST /api/markets/prices` resolves the farmer's region (type-ahead search or GPS via new Photon reverse geocoding) to a country and returns **official Eurostat producer prices** for every covered crop with period + source link on each row. EU regions get live official rows (verified: Lyon → 10 rows, Germany → 2024 periods); non-EU regions get an honest "no live feed connected" state — **zero sample prices anywhere**. Net-realization calculator now runs on the selected official price with user-entered freight/handling (clearly labeled as their own estimates). Regression test `tests/markets/noMock.test.ts` source-checks that no sample observations can creep back.
 
 ### Changed

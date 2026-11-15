@@ -11,7 +11,8 @@ import {
   TrendingUp,
   ExternalLink,
   Calculator,
-  AlertTriangle
+  AlertTriangle,
+  Newspaper
 } from 'lucide-react';
 
 interface GeoSuggestion {
@@ -34,10 +35,24 @@ interface PriceRow {
   retrievedAt: string;
 }
 
+interface NewsItem {
+  title: string;
+  url: string;
+  snippet: string;
+  publishedAt: string | null;
+  sourceDomain: string;
+}
+
 type LoadState =
   | { kind: 'idle' }
   | { kind: 'loading' }
   | { kind: 'live'; rows: PriceRow[]; locationLabel: string; note: string; provider: string; retrievedAt: string }
+  | { kind: 'unavailable'; reason: string; locationLabel?: string };
+
+type NewsState =
+  | { kind: 'idle' }
+  | { kind: 'loading' }
+  | { kind: 'live'; items: NewsItem[]; locationLabel: string; note: string; provider: string; retrievedAt: string }
   | { kind: 'unavailable'; reason: string; locationLabel?: string };
 
 export default function MarketsPage() {
@@ -46,6 +61,7 @@ export default function MarketsPage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [state, setState] = useState<LoadState>({ kind: 'idle' });
+  const [newsState, setNewsState] = useState<NewsState>({ kind: 'idle' });
   const [selectedCrop, setSelectedCrop] = useState<string | null>(null);
   const [freightCost, setFreightCost] = useState(0);
   const [handlingCost, setHandlingCost] = useState(0);
@@ -53,10 +69,46 @@ export default function MarketsPage() {
 
   useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
+  const fetchNews = async (payload: Record<string, unknown>) => {
+    setNewsState({ kind: 'loading' });
+    try {
+      const res = await fetch('/api/markets/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      const data = json?.data;
+      if (data?.available && Array.isArray(data.items) && data.items.length > 0) {
+        setNewsState({
+          kind: 'live',
+          items: data.items as NewsItem[],
+          locationLabel: data.location || 'Your region',
+          note: data.note || '',
+          provider: json?.meta?.provider || 'Web search',
+          retrievedAt: json?.meta?.retrievedAt || new Date().toISOString()
+        });
+      } else {
+        setNewsState({
+          kind: 'unavailable',
+          reason: data?.reason || 'Latest news is unavailable for this region right now.',
+          locationLabel: data?.location || undefined
+        });
+      }
+    } catch {
+      setNewsState({
+        kind: 'unavailable',
+        reason: 'Could not fetch latest news. Try again shortly — no sample headlines are ever shown.'
+      });
+    }
+  };
+
   const fetchPrices = async (payload: Record<string, unknown>) => {
     setState({ kind: 'loading' });
     setShowSuggestions(false);
     setSelectedCrop(null);
+    // Location set → also load latest web news for that place (ADR-018).
+    void fetchNews(payload);
     try {
       const res = await fetch('/api/markets/prices', {
         method: 'POST',
@@ -191,6 +243,66 @@ export default function MarketsPage() {
             “not connected” state instead of sample numbers.
           </p>
         </div>
+
+        {/* Latest location news (web search tool) */}
+        {newsState.kind !== 'idle' && (
+          <div className="bg-white rounded-3xl border border-[#DCE5DC] p-6 shadow-bento space-y-4">
+            <div className="flex items-center gap-2.5 border-b border-[#DCE5DC] pb-3.5">
+              <div className="w-9 h-9 rounded-2xl bg-[#EDF6ED] text-[#153D2B] flex items-center justify-center border border-[#DCE5DC]">
+                <Newspaper className="w-5 h-5 text-[#1BC447]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-[#1C2922]">Latest news for your region</h3>
+                <p className="text-[10px] text-[#3D4A3B] font-medium">
+                  Live web-search results — not preloaded articles. Open each link to verify.
+                </p>
+              </div>
+            </div>
+
+            {newsState.kind === 'loading' && (
+              <p className="text-xs font-bold text-[#3D4A3B] animate-pulse">Searching the web for recent agriculture news...</p>
+            )}
+
+            {newsState.kind === 'unavailable' && (
+              <div className="bg-[#FFF6EB] border border-[#FFE0B2] rounded-2xl p-4">
+                <p className="text-xs text-[#895100] font-semibold leading-relaxed">{newsState.reason}</p>
+              </div>
+            )}
+
+            {newsState.kind === 'live' && (
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold text-[#3D4A3B]">
+                  {newsState.locationLabel} · {newsState.provider} · fetched {new Date(newsState.retrievedAt).toLocaleString()}
+                </p>
+                <ul className="space-y-2.5">
+                  {newsState.items.map((item) => (
+                    <li key={item.url} className="border border-[#DCE5DC] rounded-2xl p-3.5 hover:bg-[#F3FCF3] transition-smooth">
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block group"
+                      >
+                        <p className="text-xs font-extrabold text-[#1C2922] group-hover:text-[#153D2B] leading-snug">
+                          {item.title}
+                          <ExternalLink className="w-3 h-3 inline ml-1.5 text-[#3D4A3B]" />
+                        </p>
+                        {item.snippet && (
+                          <p className="text-[11px] text-[#3D4A3B] font-medium mt-1.5 leading-relaxed line-clamp-2">{item.snippet}</p>
+                        )}
+                        <p className="text-[10px] text-[#153D2B] font-bold mt-1.5">
+                          {item.sourceDomain}
+                          {item.publishedAt ? ` · ${item.publishedAt}` : ''}
+                        </p>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-[10px] text-[#3D4A3B] font-medium">{newsState.note}</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Idle */}
         {state.kind === 'idle' && (

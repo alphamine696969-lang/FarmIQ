@@ -45,7 +45,7 @@ export function buildExtractiveFallback(
   const note =
     providerState === 'unconfigured' ? 'AI generation provider not configured' : 'AI generation provider unreachable';
   const body = parts.join('\n\n');
-  return `Based on FarmIQ\u2019s knowledge base (local index — ${note}):\n\n${body}`;
+  return `Based on FarmIQ\u2019s retrieved sources (${note}):\n\n${body}`;
 }
 
 function insufficientOutcome(): GenerationOutcome {
@@ -82,7 +82,8 @@ export async function generateResponse(params: {
   }
 
   // Provider configured: always call the model. The pipeline builds the
-  // general-knowledge prompt when retrieval returned nothing.
+  // general-knowledge prompt when retrieval returned nothing. The model may
+  // research live pages via web_search/web_fetch tools (ADR-019).
   try {
     const { generateAnswer } = await import('../../integrations/ai');
     const result = await generateAnswer(context.systemPrompt, history, userMessage);
@@ -91,7 +92,8 @@ export async function generateResponse(params: {
         answer: result.text.trim(),
         modelUsed: result.modelUsed,
         method: 'llm_generation',
-        providerConfigured: true
+        providerConfigured: true,
+        ...(result.research && result.research.length ? { research: result.research } : {})
       };
     }
   } catch (error) {

@@ -53,6 +53,7 @@ Update this file after every workflow. Use `docs/TASK_TEMPLATE.md` for substanti
 | FIQ-051 | P1 | Implement document retrieval | FIQ-050 | DONE | Relevant approved documents can be retrieved |
 | FIQ-052 | P1 | Implement assistant and citation validation | FIQ-051 | DONE | Invalid citations are rejected |
 | FIQ-054 | P1 | Implement layered chatbot request pipeline | FIQ-052 | DONE | All 7 pipeline layers run end-to-end with tests; unconfigured providers degrade with labeled fallbacks |
+| FIQ-055 | P1 | Add keyless web research tools (web_search/web_fetch); remove preloaded statics | FIQ-054 | DONE | STATIC_CHUNKS removed; model-initiated tool loop researches before every answer (ADR-019); marketplace news + scanner use the same keyless tools; SSRF-guarded `web_fetch`; honest disabled states; `docs/AI_TOOLS.md` |
 | FIQ-053 | P2 | Implement multilingual and voice enhancements | FIQ-052 | TODO | Unsupported capabilities degrade gracefully |
 
 ## Markets and weather

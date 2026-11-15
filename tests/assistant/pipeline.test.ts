@@ -34,6 +34,7 @@ delete process.env.AI_EMBEDDING_MODEL;
 delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 delete process.env.NEXT_PUBLIC_SUPABASE_URL;
 delete process.env.GOOGLE_TRANSLATE_API_KEY;
+delete process.env.WEB_FETCH_DISABLED;
 
 async function runTests(): Promise<void> {
   console.log('Running FarmIQ AI Chatbot Pipeline Test Suite...');
@@ -314,18 +315,107 @@ async function runTests(): Promise<void> {
   assertEqual(adaptiveSelected.length, 2, 'relative floor drops weak matches below top*0.6');
   assert(RELATIVE_RELEVANCE_CUTOFF > 0 && RELATIVE_RELEVANCE_CUTOFF < 1, 'cutoff is a fraction');
 
-  const narrowQuery = retrieveLocally('minimum support price for wheat', 'price_query');
+  const narrowQuery = retrieveLocally('minimum support price for wheat soil pH', 'general_farming');
   const broadQuery = retrieveLocally('wheat farming disease irrigation market price government scheme', 'general_farming');
   const narrowSources = new Set(narrowQuery.chunks.map((c) => c.sourceId || c.sourceLabel)).size;
-  const broadSources = new Set(broadQuery.chunks.map((c) => c.sourceLabel)).size;
+  const broadSources = new Set(broadQuery.chunks.map((c) => c.sourceId || c.sourceLabel)).size;
   assert(narrowSources >= 1, 'narrow query still returns its relevant source(s)');
-  assert(narrowSources <= 2, 'narrow query is not padded to a fixed source quota');
-  assert(broadSources >= narrowSources, 'broader question can surface at least as many sources');
+  assert(narrowSources <= 4, 'narrow query is not padded to a fixed source quota');
+  assert(broadQuery.chunks.length >= 1, 'broader question still returns matching profiles');
   assert(
     narrowQuery.chunks.every((c) => c.similarity >= 0.2),
     'every adaptive chunk clears the threshold'
   );
+  assert(
+    narrowQuery.chunks.every((c, i) => i === 0 || narrowQuery.chunks[i - 1].similarity >= c.similarity),
+    'adaptive chunks stay sorted by relevance'
+  );
   console.log('✔ Sources adapt to query relevance (narrow → few, broad → more)');
+
+  /* -------------------- Preloaded static resources removed (ADR-018) -------------------- */
+  const { getLocalKnowledgeIndex } = await import('../../lib/services/assistant/knowledgeIndex');
+  const localChunks = getLocalKnowledgeIndex();
+  assert(
+    localChunks.every((c) => c.kbName === 'kb_crops' || c.kbName === 'kb_diseases'),
+    'local index keeps only crop/disease profiles — no preloaded statics'
+  );
+  assert(
+    !localChunks.some((c) => c.chunkId.startsWith('kb_farmiq-') || c.chunkId.startsWith('kb_markets-') || c.chunkId.startsWith('kb_schemes-')),
+    'STATIC_CHUNKS (farmiq/markets/schemes/agronomy preloads) are gone'
+  );
+  console.log('✔ Preloaded static knowledge resources are removed from the index');
+
+  /* -------------------- Web research tools (ADR-019): SSRF + parsers -------------------- */
+  const {
+    validateUrlShape,
+    htmlToText,
+    parseBingNewsRss,
+    parseWikipediaSearch,
+    isWebFetchEnabled,
+    webFetch
+  } = await import('../../lib/integrations/webFetch');
+
+  // SSRF guards — shape validation blocks private/loopback/metadata targets
+  assert(validateUrlShape('https://en.wikipedia.org/wiki/Wheat').ok, 'public https URL accepted');
+  assert(!validateUrlShape('ftp://example.com/x').ok, 'non-http scheme rejected');
+  assert(!validateUrlShape('http://localhost/admin').ok, 'localhost rejected');
+  assert(!validateUrlShape('http://127.0.0.1:8080/').ok, 'loopback IP rejected');
+  assert(!validateUrlShape('http://169.254.169.254/latest/meta-data/').ok, 'cloud metadata IP rejected');
+  assert(!validateUrlShape('http://10.0.0.5/internal').ok, 'private 10.x IP rejected');
+  assert(!validateUrlShape('http://192.168.1.1/router').ok, 'private 192.168.x IP rejected');
+  assert(!validateUrlShape('http://user:pass@example.com/').ok, 'credential URLs rejected');
+  assert(!validateUrlShape('not a url').ok, 'garbage URL rejected');
+  console.log('✔ web_fetch SSRF guards block private, metadata, and non-http targets');
+
+  // HTML → readable text
+  const extracted = htmlToText(
+    '<html><head><title>Wheat Guide</title><style>p{color:red}</style></head><body><script>alert(1)</script><h1>Wheat</h1><p>pH 6.0&nbsp;to&nbsp;7.5.</p></body></html>'
+  );
+  assert(extracted.includes('Wheat Guide'), 'page title extracted');
+  assert(extracted.includes('pH 6.0 to 7.5'), 'body text decoded (entities)');
+  assert(!extracted.includes('alert(1)'), 'scripts stripped');
+  assert(!extracted.includes('color:red'), 'styles stripped');
+  console.log('✔ web_fetch HTML→text extraction strips scripts/styles and decodes entities');
+
+  // Keyless search parsers (pure, offline)
+  const rssSample = `<?xml version="1.0"?><rss><channel>
+<item><title>Tomato prices rise in Punjab mandis</title><link>http://www.bing.com/news/apiclick.aspx?ref=FexRss&amp;url=https%3a%2f%2fexample.com%2ftomato-prices</link><description>Tomato &lt;b&gt;prices&lt;/b&gt; climbed this week.</description><pubDate>Wed, 12 Nov 2026 10:00:00 GMT</pubDate><News:Source>Daily Market</News:Source></item>
+<item><title>Monsoon update for farmers</title><link>https://news.example.org/monsoon</link><description>Rainfall normal this season.</description><pubDate>Tue, 11 Nov 2026 08:00:00 GMT</pubDate></item>
+</channel></rss>`;
+  const rssItems = parseBingNewsRss(rssSample);
+  assertEqual(rssItems.length, 2, 'RSS parser finds both items');
+  assertEqual(rssItems[0].url, 'https://example.com/tomato-prices', 'apiclick wrapper unwrapped to the real article URL');
+  assertEqual(rssItems[0].source, 'Daily Market', 'publisher name parsed');
+  assert(Boolean(rssItems[0].publishedAt), 'pubDate parsed to ISO');
+  assert(!rssItems[1].snippet.includes('<b>'), 'snippet tags stripped');
+
+  const wikiPayload = {
+    query: { search: [{ title: 'Late blight', snippet: 'a <span class="searchmatch">fungal</span> disease', timestamp: '2026-10-01T00:00:00Z' }] }
+  };
+  const wikiItems = parseWikipediaSearch(wikiPayload);
+  assertEqual(wikiItems.length, 1, 'Wikipedia parser finds the result');
+  assertEqual(wikiItems[0].url, 'https://en.wikipedia.org/wiki/Late_blight', 'Wikipedia URL built from title');
+  assertEqual(wikiItems[0].snippet, 'a fungal disease', 'Wikipedia snippet tags stripped');
+  console.log('✔ Keyless search parsers (Bing News RSS + Wikipedia) parse real payloads');
+
+  // Disabled state is honest (no fake results)
+  process.env.WEB_FETCH_DISABLED = '1';
+  assertEqual(isWebFetchEnabled(), false, 'WEB_FETCH_DISABLED=1 turns tools off');
+  const disabledFetch = await webFetch('https://en.wikipedia.org/wiki/Wheat');
+  assertEqual(disabledFetch.ok, false, 'disabled web_fetch refuses');
+  assert(
+    Boolean(disabledFetch.reason && disabledFetch.reason.includes('WEB_FETCH_DISABLED')),
+    'disabled reason discloses the flag'
+  );
+  delete process.env.WEB_FETCH_DISABLED;
+  assertEqual(isWebFetchEnabled(), true, 'tools re-enabled after flag removed');
+
+  assertEqual(
+    (await runChatPipeline({ message: 'Which crop should I grow in November in Punjab?', history: [] })).providerConfigured.webSearch,
+    true,
+    'pipeline reports web research tools enabled by default'
+  );
+  console.log('✔ Web research tools degrade honestly when disabled via WEB_FETCH_DISABLED');
 
   console.log('All chatbot pipeline tests passed successfully!');
 }

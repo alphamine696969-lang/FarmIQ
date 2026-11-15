@@ -5,7 +5,9 @@
  * unconfigured layers degrade to clearly-labeled deterministic fallbacks.
  *
  * Providers (ADR-009): TokenHarbor OpenAI-compatible gateway for generation,
- * classification, and (opt-in) embeddings; Google Translate for translation.
+ * classification, and (opt-in) embeddings; Google Translate for translation;
+ * web research tools (ADR-019) — keyless Bing News RSS + Wikipedia + guarded
+ * page fetch (WEB_FETCH_DISABLED=1 opts out).
  */
 
 export interface PipelineProviderConfig {
@@ -15,6 +17,8 @@ export interface PipelineProviderConfig {
   classifier: boolean;
   retrieval: boolean;
   translation: boolean;
+  /** Web research tools for the model (ADR-019): keyless, server-side. */
+  webSearch: boolean;
 }
 
 function hasKey(...names: string[]): boolean {
@@ -33,6 +37,9 @@ export function getProviderConfig(): PipelineProviderConfig {
     // pgvector retrieval requires the Supabase service role key (FIQ-020 pending).
     retrieval: hasKey('SUPABASE_SERVICE_ROLE_KEY', 'NEXT_PUBLIC_SUPABASE_URL'),
     // Google Translate is the implemented translation provider (translation.ts).
-    translation: hasKey('GOOGLE_TRANSLATE_API_KEY')
+    translation: hasKey('GOOGLE_TRANSLATE_API_KEY'),
+    // Web research tools (ADR-019): keyless and on by default; opt out with
+    // WEB_FETCH_DISABLED=1 (used by offline test runs).
+    webSearch: process.env.WEB_FETCH_DISABLED !== '1'
   };
 }
