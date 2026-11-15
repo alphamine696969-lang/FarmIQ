@@ -607,11 +607,11 @@ export default function AssistantPage() {
                   {/* Right: Mic Dictation + Send Button */}
                   <div className="flex items-center gap-2">
                     
-                    {/* Voice Dictation Button */}
+                    {/* Voice Dictation Button with dropdown chevron (matches Claude 🎙️ v) */}
                     <button
                       type="button"
                       onClick={handleToggleVoice}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                      className={`h-8 px-2 rounded-full flex items-center gap-0.5 transition-all ${
                         isListening
                           ? 'bg-red-50 text-red-600 border border-red-200 animate-pulse'
                           : 'text-stone-500 hover:text-stone-800 hover:bg-stone-100'
@@ -623,6 +623,7 @@ export default function AssistantPage() {
                       ) : (
                         <Mic className="w-4 h-4" />
                       )}
+                      <ChevronDown className="w-3 h-3 text-stone-400" />
                     </button>
 
                     {/* Send Button */}
