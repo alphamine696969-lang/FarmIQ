@@ -11,9 +11,13 @@ export default function AppChatPage() {
     'North field',
     'South field'
   ]);
+  const [userName, setUserName] = useState<string>('Parth');
 
   useEffect(() => {
     const profile = getStoredUserProfile();
+    if (profile?.displayName && profile.displayName !== 'Farmer') {
+      setUserName(profile.displayName.split(' ')[0]);
+    }
     if (profile?.farms && profile.farms.length > 0) {
       const fieldNames = ['All fields', ...profile.farms.map((f) => f.name)];
       setFields(fieldNames);
@@ -22,16 +26,17 @@ export default function AppChatPage() {
 
   return (
     <AppShell>
-      <div className="h-[calc(100vh-130px)] w-full flex flex-col -mt-3">
+      <div className="h-[calc(100vh-130px)] w-full flex flex-col justify-between -mt-2">
         <ChatPage
           apiUrl="/api/chat"
           fields={fields}
+          title={`What’s growing today, ${userName}?`}
           suggestions={[
-            'Will it rain this week?',
-            'Why are my leaves yellowing?',
-            'Plan this month’s sowing',
-            'What is the optimal soil pH for winter wheat?',
-            'How do I identify early blight in tomatoes?'
+            '🌦️ Will it rain this week?',
+            '🔬 Why are my tomato leaves yellowing?',
+            '📅 Plan this month’s sowing schedule',
+            '🧪 Optimal soil pH for winter wheat',
+            '📈 Mandi wholesale price benchmarks'
           ]}
         />
       </div>

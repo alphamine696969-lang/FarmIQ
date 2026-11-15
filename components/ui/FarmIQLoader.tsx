@@ -24,3 +24,4 @@ export function FarmIQLoader({ size = 32, onDark = false, className = '' }: Farm
 }
 
 export default FarmIQLoader;
+

@@ -37,6 +37,8 @@ export interface ChatPageProps {
   language?: string;
   /** Suggestion chips shown on the empty screen. */
   suggestions?: string[];
+  /** Optional title override. */
+  title?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -274,7 +276,14 @@ export default function ChatPage({
   apiUrl,
   fields = ["All fields", "North field", "South field"],
   language = "en-US",
-  suggestions = ["Will it rain this week?", "Why are my leaves yellowing?", "Plan this month’s sowing"],
+  suggestions = [
+    "🌦️ Will it rain this week?",
+    "🔬 Why are my tomato leaves yellowing?",
+    "📅 Plan this month’s sowing schedule",
+    "🧪 What is the optimal soil pH for winter wheat?",
+    "📈 Check APMC Mandi wholesale prices"
+  ],
+  title,
 }: ChatPageProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
@@ -435,8 +444,13 @@ export default function ChatPage({
       <div id="msgs" ref={logRef} role="log" aria-live="polite">
         {messages.length === 0 ? (
           <div className="hero">
-            <Sprout size={44} still />
-            <h1>What’s growing today?</h1>
+            <div className="hero-badge">
+              <Sprout size={36} still />
+            </div>
+            <h1>{title || "What’s growing today?"}</h1>
+            <p className="hero-sub">
+              Ask FarmIQ about crop pathology, soil nutrients, weather forecasts, or seasonal field planning.
+            </p>
             <div className="sugs">
               {suggestions.map((s) => (
                 <button
@@ -444,7 +458,7 @@ export default function ChatPage({
                   className="sug"
                   type="button"
                   onClick={() => {
-                    setText(s);
+                    setText(s.replace(/^[^\w\s]+\s*/, ''));
                     taRef.current?.focus();
                   }}
                 >
