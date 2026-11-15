@@ -460,7 +460,7 @@ function MessageRow({ msg }: { msg: Message }) {
   return (
     <div className="row bot">
       <div className="bot-avatar" aria-hidden="true">
-        <Sprout size={18} still />
+        <img src="/brand/logo-icon.png" alt="FarmIQ" className="bot-logo-img" />
       </div>
       <div className="bub">
         {msg.status === "typing" ? (
@@ -737,17 +737,12 @@ export default function ChatPage({
         {messages.length === 0 ? (
           <div className="hero">
             <div className="hero-badge">
-              <Sprout size={36} still />
+              <img src="/brand/logo-icon.png" alt="FarmIQ" className="hero-logo-img" />
             </div>
             <h1>{title || "What’s growing today?"}</h1>
             <p className="hero-sub">
               Ask FarmIQ about crop pathology, soil nutrients, weather forecasts, or seasonal field planning.
             </p>
-
-            <div className="hero-rag-tag">
-              <span className="pulse-dot" />
-              <span>Grounded Agronomic Intelligence</span>
-            </div>
 
             <div className="sugs">
               {suggestions.map((s) => (

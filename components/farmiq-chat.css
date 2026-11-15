@@ -124,6 +124,20 @@ html, body {
   transform: scale(1.06);
 }
 
+.hero-logo-img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  display: block;
+}
+
+.bot-logo-img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
+}
+
 .hero h1 {
   margin: 0;
   font-family: 'Newsreader', 'Lora', Georgia, 'Plus Jakarta Sans', serif;
@@ -1216,14 +1230,20 @@ textarea::placeholder {
   }
 
   .hero-badge {
-    width: 46px;
-    height: 46px;
+    width: 48px;
+    height: 48px;
     border-radius: 16px;
     margin-bottom: 0px;
   }
 
-  .hero-badge .fl {
-    font-size: 24px !important;
+  .hero-logo-img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .bot-logo-img {
+    width: 18px;
+    height: 18px;
   }
 
   .hero h1 {
