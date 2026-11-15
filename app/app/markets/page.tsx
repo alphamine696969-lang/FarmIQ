@@ -129,7 +129,6 @@ export default function MarketsPage() {
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h2 className="text-xl font-extrabold tracking-tight text-[#1C2922]">Market Prices</h2>
-              <FreshnessBadge status="live" label="Official live source" />
             </div>
             <p className="text-xs text-[#3D4A3B] mt-1 font-medium">
               Pick your region to load official crop prices for your country. No sample or simulated prices are shown — only what the official source publishes.
@@ -137,7 +136,7 @@ export default function MarketsPage() {
           </div>
           <div className="flex items-center gap-2 text-xs bg-[#EDF6ED] text-[#153D2B] px-4 py-2 rounded-full border border-[#DCE5DC] font-bold shrink-0">
             <ShieldCheck className="w-4 h-4 text-[#1BC447]" />
-            <span>Official data only — zero mock rows</span>
+            <span>Verified Data</span>
           </div>
         </div>
 
@@ -188,8 +187,8 @@ export default function MarketsPage() {
             </button>
           </div>
           <p className="text-[10px] text-[#3D4A3B] font-medium">
-            Coverage today: official annual producer prices for <strong>EU countries</strong> (Eurostat, latest published period). Other regions show an honest
-            “not connected” state instead of sample numbers. Daily mandi quotes are not connected yet.
+            Coverage: Official daily APMC Mandi prices for India (Agmarknet) and annual producer prices for EU countries (Eurostat). Other regions show an honest
+            “not connected” state instead of sample numbers.
           </p>
         </div>
 
