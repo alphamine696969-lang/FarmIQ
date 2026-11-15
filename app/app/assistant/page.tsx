@@ -50,6 +50,7 @@ export default function AssistantPage() {
           fields={fields}
           title={greeting}
           suggestions={[
+            '📸 Diagnose leaf disease from photo',
             '🌦️ Will it rain this week?',
             '🔬 Why are my tomato leaves yellowing?',
             '📅 Plan this month’s sowing schedule',

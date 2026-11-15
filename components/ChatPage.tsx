@@ -20,11 +20,19 @@ type MenuName = "plus" | "ctx" | null;
 type ActionState = "mic" | "send" | "stop" | "rec";
 type BotStatus = "typing" | "streaming" | "done" | "stopped" | "error";
 
+export interface Attachment {
+  name: string;
+  size?: number;
+  type?: string;
+  url?: string;
+}
+
 interface Message {
   id: string;
   role: "user" | "bot";
   text: string;
   files?: string[];
+  attachments?: Attachment[];
   status?: BotStatus;
 }
 
@@ -227,6 +235,11 @@ const FileIcon = () => (
     <path d="M14 2v6h6" />
   </Icon>
 );
+const PaperclipIcon = () => (
+  <Icon>
+    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+  </Icon>
+);
 
 /* ------------------------------------------------------------------ */
 /* Rich Markdown Message List                                         */
@@ -416,8 +429,30 @@ function MessageRow({ msg }: { msg: Message }) {
     return (
       <div className="row me">
         <div className="bub">
-          {msg.text}
-          {msg.files && msg.files.length > 0 && <small>Attached: {msg.files.join(", ")}</small>}
+          {msg.attachments && msg.attachments.length > 0 && (
+            <div className="msg-attachments">
+              {msg.attachments.map((att, idx) =>
+                att.url && (att.type?.startsWith("image/") || /\.(jpg|jpeg|png|webp)$/i.test(att.name)) ? (
+                  <div key={idx} className="msg-att-img-wrap">
+                    <img src={att.url} alt={att.name} className="msg-att-img" />
+                    <span className="msg-att-caption">{att.name}</span>
+                  </div>
+                ) : (
+                  <div key={idx} className="msg-att-doc">
+                    <span className="msg-att-doc-icon"><FileIcon /></span>
+                    <div className="msg-att-doc-text">
+                      <span className="msg-att-doc-name">{att.name}</span>
+                      {att.size ? <span className="msg-att-doc-size">{(att.size / 1024).toFixed(0)} KB</span> : null}
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+          )}
+          {msg.text && <div className="msg-user-text">{msg.text}</div>}
+          {!msg.attachments && msg.files && msg.files.length > 0 && (
+            <small>Attached: {msg.files.join(", ")}</small>
+          )}
         </div>
       </div>
     );
@@ -459,6 +494,8 @@ export default function ChatPage({
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+  const [isDragging, setIsDragging] = useState(false);
   const [mode, setMode] = useState<Mode>("ask");
   const [field, setField] = useState(fields[0]);
   const [menu, setMenu] = useState<MenuName>(null);
@@ -493,16 +530,18 @@ export default function ChatPage({
   /* Close menus on outside click or Escape */
   useEffect(() => {
     if (!menu) return;
-    const onClick = (e: MouseEvent) => {
+    const onClick = (e: MouseEvent | TouchEvent) => {
       if (!dockRef.current?.contains(e.target as Node)) setMenu(null);
     };
     const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key === "Escape") setMenu(null);
     };
-    document.addEventListener("mousedown", onClick);
+    document.addEventListener("mousedown", onClick as EventListener);
+    document.addEventListener("touchstart", onClick as EventListener);
     document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("mousedown", onClick as EventListener);
+      document.removeEventListener("touchstart", onClick as EventListener);
       document.removeEventListener("keydown", onKey);
     };
   }, [menu]);
@@ -516,16 +555,63 @@ export default function ChatPage({
     [],
   );
 
+  const addFiles = (list: FileList | File[] | null) => {
+    if (!list) return;
+    const array = Array.from(list);
+    if (array.length === 0) return;
+    setFiles((prev) => [...prev, ...array].slice(0, 5));
+    array.forEach((f) => {
+      if (f.type.startsWith("image/") || /\.(jpg|jpeg|png|webp)$/i.test(f.name)) {
+        try {
+          const url = URL.createObjectURL(f);
+          setPreviews((p) => ({ ...p, [f.name]: url }));
+        } catch {}
+      }
+    });
+    setMenu(null);
+    taRef.current?.focus();
+  };
+
+  const removeFile = (idx: number) => {
+    setFiles((prev) => {
+      const removed = prev[idx];
+      if (removed && previews[removed.name]) {
+        try {
+          URL.revokeObjectURL(previews[removed.name]);
+        } catch {}
+        setPreviews((p) => {
+          const next = { ...p };
+          delete next[removed.name];
+          return next;
+        });
+      }
+      return prev.filter((_, i) => i !== idx);
+    });
+  };
+
   const send = useCallback(
     async (override?: string) => {
       const content = (override ?? text).trim();
       if ((!content && files.length === 0) || busy) return;
 
       const sentFiles = files;
+      const sentAttachments: Attachment[] = sentFiles.map((f) => ({
+        name: f.name,
+        size: f.size,
+        type: f.type,
+        url: previews[f.name],
+      }));
+
       const botId = nextId();
       setMessages((m) => [
         ...m,
-        { id: nextId(), role: "user", text: content || "Please look at this.", files: sentFiles.map((f) => f.name) },
+        {
+          id: nextId(),
+          role: "user",
+          text: content || (sentFiles.length > 0 ? "Attached photos & files for agronomic diagnosis:" : "Please look at this."),
+          files: sentFiles.map((f) => f.name),
+          attachments: sentAttachments,
+        },
         { id: botId, role: "bot", text: "", status: "typing" },
       ]);
       setText("");
@@ -603,15 +689,50 @@ export default function ChatPage({
     }
   };
 
-  const addFiles = (list: FileList | null) => {
-    if (!list || list.length === 0) return;
-    setFiles((f) => [...f, ...Array.from(list)]);
-    setMenu(null);
-    taRef.current?.focus();
+  const onPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (e.clipboardData.files && e.clipboardData.files.length > 0) {
+      e.preventDefault();
+      addFiles(e.clipboardData.files);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      addFiles(e.dataTransfer.files);
+    }
   };
 
   return (
-    <div className={`app ${messages.length === 0 ? "is-empty" : "has-messages"}`}>
+    <div
+      className={`app ${messages.length === 0 ? "is-empty" : "has-messages"}${isDragging ? " is-dragging" : ""}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {isDragging && (
+        <div className="fiq-drop-overlay">
+          <div className="drop-card">
+            <ImageIcon />
+            <h3>Drop crop photos or files here</h3>
+            <p>Support for JPG, PNG, WebP, PDF, CSV, and text notes</p>
+          </div>
+        </div>
+      )}
       <div id="msgs" ref={logRef} role="log" aria-live="polite">
         {messages.length === 0 ? (
           <div className="hero">
@@ -656,12 +777,19 @@ export default function ChatPage({
             <div className="atts">
               {files.map((f, i) => (
                 <span className="att" key={`${f.name}-${i}`}>
-                  <i className="th" />
-                  <span>{f.name}</span>
+                  {previews[f.name] ? (
+                    <img src={previews[f.name]} alt={f.name} className="att-thumb-img" />
+                  ) : (
+                    <span className="th"><FileIcon /></span>
+                  )}
+                  <span className="att-info">
+                    <span className="att-name">{f.name}</span>
+                    <span className="att-size">{(f.size / 1024).toFixed(0)} KB</span>
+                  </span>
                   <button
                     type="button"
                     aria-label={`Remove ${f.name}`}
-                    onClick={() => setFiles((all) => all.filter((_, j) => j !== i))}
+                    onClick={() => removeFile(i)}
                   >
                     <XIcon />
                   </button>
@@ -679,6 +807,7 @@ export default function ChatPage({
               aria-label="Message"
               onChange={(e) => setText(e.target.value)}
               onKeyDown={onKeyDown}
+              onPaste={onPaste}
             />
             <div className="wave" aria-hidden="true">
               <b>
@@ -696,12 +825,33 @@ export default function ChatPage({
             <button
               className="ic"
               type="button"
-              aria-label="Add attachment"
+              aria-label="More attachment options"
+              title="More attachment options"
               aria-haspopup="menu"
               aria-expanded={menu === "plus"}
               onClick={() => setMenu(menu === "plus" ? null : "plus")}
             >
               <PlusIcon />
+            </button>
+
+            <button
+              className="ic"
+              type="button"
+              aria-label="Attach crop photo"
+              title="Attach photo of crops, leaves, or soil"
+              onClick={() => photoRef.current?.click()}
+            >
+              <ImageIcon />
+            </button>
+
+            <button
+              className="ic"
+              type="button"
+              aria-label="Attach document or file"
+              title="Attach document, field report, or CSV"
+              onClick={() => docRef.current?.click()}
+            >
+              <PaperclipIcon />
             </button>
 
             <div className="seg" role="radiogroup" aria-label="Mode">
@@ -742,15 +892,15 @@ export default function ChatPage({
             <div className="menu" role="menu">
               <button type="button" role="menuitem" onClick={() => photoRef.current?.click()}>
                 <ImageIcon />
-                Photo of a crop
+                <span>Photo of a crop</span>
               </button>
               <button type="button" role="menuitem" onClick={() => cameraRef.current?.click()}>
                 <CameraIcon />
-                Take a photo
+                <span>Take a photo with camera</span>
               </button>
               <button type="button" role="menuitem" onClick={() => docRef.current?.click()}>
                 <FileIcon />
-                Upload a file
+                <span>Upload document (PDF, CSV, TXT)</span>
               </button>
             </div>
           )}
@@ -776,7 +926,7 @@ export default function ChatPage({
 
           <input ref={photoRef} type="file" accept="image/*" multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
           <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
-          <input ref={docRef} type="file" accept=".pdf,.csv,.txt" multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
+          <input ref={docRef} type="file" accept=".pdf,.csv,.txt,.json,.doc,.docx" multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
         </div>
 
         <p className="fine">Farm IQ can make mistakes. Check important advice.</p>

@@ -315,6 +315,86 @@ html, body {
   font-size: 12px;
 }
 
+/* Sent Message Attachments */
+.msg-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.msg-att-img-wrap {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
+  max-width: 220px;
+}
+
+.msg-att-img {
+  display: block;
+  max-width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.msg-att-caption {
+  display: block;
+  font-size: 10.5px;
+  padding: 3px 6px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.msg-att-doc {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  padding: 6px 12px;
+  color: #FFFFFF;
+}
+
+.msg-att-doc-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.msg-att-doc-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.msg-att-doc-name {
+  font-size: 12px;
+  font-weight: 600;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.msg-att-doc-size {
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.msg-user-text {
+  margin: 0;
+  line-height: 1.5;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Bot Markdown Typography & Block Elements                                   */
 /* -------------------------------------------------------------------------- */
@@ -571,11 +651,48 @@ textarea::placeholder {
   animation: pop 0.25s both;
 }
 
+.att-thumb-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid #DCE5DC;
+}
+
 .att .th {
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
-  background: linear-gradient(135deg, #1BC447, #153D2B);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #EDF6ED;
+  display: grid;
+  place-items: center;
+  color: #153D2B;
+}
+
+.att .th svg {
+  width: 16px;
+  height: 16px;
+}
+
+.att-info {
+  display: flex;
+  flex-direction: column;
+  max-width: 160px;
+}
+
+.att-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #153D2B;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.att-size {
+  font-size: 10px;
+  color: #6A7D6C;
+  font-weight: 500;
 }
 
 .att button {
@@ -593,6 +710,56 @@ textarea::placeholder {
 }
 
 .att button:hover {
+  color: #BA1A1A;
+}
+
+/* Drag & Drop Overlay */
+.app.is-dragging {
+  position: relative;
+}
+
+.fiq-drop-overlay {
+  position: absolute;
+  inset: 8px;
+  background: rgba(243, 252, 243, 0.94);
+  backdrop-filter: blur(6px);
+  border: 2px dashed #1BC447;
+  border-radius: 24px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: pop 0.2s both;
+}
+
+.drop-card {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+}
+
+.drop-card svg {
+  width: 44px;
+  height: 44px;
+  color: #1BC447;
+}
+
+.drop-card h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #153D2B;
+}
+
+.drop-card p {
+  margin: 0;
+  font-size: 13px;
+  color: #4B5E4F;
+}
   color: #BA1A1A;
 }
 
