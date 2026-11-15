@@ -71,13 +71,17 @@ export interface UserProfile {
   activeFarmId: string;
   savedScenarios: SavedProfitScenario[];
   preferences: UserPreferences;
+  authProvider?: 'google' | 'email';
+  photoUrl?: string;
+  avatarUrl?: string;
+  googleSub?: string;
 }
 
 export const INITIAL_USER_PROFILE: UserProfile = {
-  id: "usr-demo-01",
-  displayName: "Alex Rivera",
-  email: "alex.rivera@farmiq.demo",
-  country: "United States",
+  id: "usr-local-01",
+  displayName: "Farmer",
+  email: "",
+  country: "",
   role: "farmer",
   preferences: {
     measurementSystem: "metric",
@@ -87,143 +91,28 @@ export const INITIAL_USER_PROFILE: UserProfile = {
     frostAlerts: true,
     marketPriceAlerts: true
   },
-  activeFarmId: "farm-01",
-  farms: [
-    {
-      id: "farm-01",
-      name: "Valley View Agricultural Estate",
-      country: "United States",
-      region: "Iowa / Upper Midwest",
-      areaTotal: 120,
-      areaUnit: "acre",
-      createdAt: "2026-03-15",
-      plots: [
-        {
-          id: "plot-101",
-          name: "North Ridge (Plot A)",
-          areaValue: 45,
-          areaUnit: "acre",
-          soilType: "Silt Loam",
-          soilPh: 6.6,
-          irrigationType: "Drip",
-          currentCrop: "Hard Red Winter Wheat",
-          status: "Planted"
-        },
-        {
-          id: "plot-102",
-          name: "East Riverfront (Plot B)",
-          areaValue: 50,
-          areaUnit: "acre",
-          soilType: "Clay Loam",
-          soilPh: 6.4,
-          irrigationType: "Sprinkler",
-          currentCrop: "Soybeans (Non-GMO)",
-          status: "Planted"
-        },
-        {
-          id: "plot-103",
-          name: "South Terraces (Plot C)",
-          areaValue: 25,
-          areaUnit: "acre",
-          soilType: "Sandy Loam",
-          soilPh: 6.8,
-          irrigationType: "Drip",
-          currentCrop: "Heirloom Tomatoes",
-          status: "Harvesting"
-        }
-      ]
-    },
-    {
-      id: "farm-02",
-      name: "Sunrise Organic Orchard & Grain",
-      country: "United States",
-      region: "Wisconsin",
-      areaTotal: 40,
-      areaUnit: "acre",
-      createdAt: "2026-05-20",
-      plots: [
-        {
-          id: "plot-201",
-          name: "Hilltop Meadow",
-          areaValue: 40,
-          areaUnit: "acre",
-          soilType: "Loam",
-          soilPh: 6.5,
-          irrigationType: "Rainfed",
-          currentCrop: "Maize (Corn)",
-          status: "Planted"
-        }
-      ]
-    }
-  ],
-  savedScenarios: [
-    {
-      id: "scen-01",
-      name: "Winter Wheat 2026 Season Plan",
-      createdAt: "2026-10-08",
-      input: {
-        cropName: "Hard Red Winter Wheat",
-        areaValue: 45,
-        areaUnit: "acre",
-        expectedYieldPerUnitArea: 2.4,
-        yieldUnit: "tonnes",
-        expectedPricePerYieldUnit: 250,
-        currency: "USD",
-        costs: {
-          seeds: 3200,
-          fertilizers: 4500,
-          cropProtection: 1800,
-          labor: 3500,
-          irrigation: 1200,
-          machineryFuel: 2900,
-          landRent: 4000,
-          miscellaneous: 900
-        }
-      },
-      result: {
-        totalProduction: 108,
-        grossRevenue: 27000,
-        totalCost: 22000,
-        netProfit: 5000,
-        profitPerUnitArea: 111.11,
-        costPerUnitArea: 488.89,
-        revenuePerUnitArea: 600,
-        breakEvenYieldPerUnitArea: 1.96,
-        breakEvenPricePerUnit: 203.70,
-        roiPercentage: 22.7,
-        marginPercentage: 18.5,
-        isProfitable: true,
-        costBreakdownPercentages: {
-          seeds: 14.5,
-          fertilizers: 20.5,
-          cropProtection: 8.2,
-          labor: 15.9,
-          irrigation: 5.5,
-          machineryFuel: 13.2,
-          landRent: 18.2,
-          miscellaneous: 4.1
-        },
-        assumptions: {
-          areaValue: 45,
-          areaUnit: "acre",
-          currency: "USD",
-          yieldUnit: "tonnes"
-        }
-      }
-    }
-  ]
+  activeFarmId: "",
+  farms: [],
+  savedScenarios: []
 };
 
-const STORAGE_KEY = 'farmiq_user_profile_v1';
+const STORAGE_KEY = 'farmiq_user_profile_v2';
 
 export function getStoredUserProfile(): UserProfile {
   if (typeof window === 'undefined') {
     return INITIAL_USER_PROFILE;
   }
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('farmiq_user_profile_v1');
     if (!raw) return INITIAL_USER_PROFILE;
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    // If the cached profile is the old demo profile with hardcoded mock farms, clear and start fresh
+    if (parsed.id === 'usr-demo-01' || parsed.displayName === 'Alex Rivera' || (Array.isArray(parsed.farms) && parsed.farms.some((f: any) => f.id === 'farm-01'))) {
+      localStorage.removeItem('farmiq_user_profile_v1');
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_USER_PROFILE));
+      return INITIAL_USER_PROFILE;
+    }
+    return parsed;
   } catch {
     return INITIAL_USER_PROFILE;
   }

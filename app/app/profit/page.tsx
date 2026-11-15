@@ -33,23 +33,23 @@ export default function ProfitPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   // Form input state
-  const [cropName, setCropName] = useState('Hard Red Winter Wheat');
-  const [areaValue, setAreaValue] = useState(45);
+  const [cropName, setCropName] = useState('');
+  const [areaValue, setAreaValue] = useState(0);
   const [areaUnit, setAreaUnit] = useState<'acre' | 'hectare' | 'bigha'>('acre');
-  const [expectedYield, setExpectedYield] = useState(2.4);
+  const [expectedYield, setExpectedYield] = useState(0);
   const [yieldUnit, setYieldUnit] = useState('tonnes');
-  const [expectedPrice, setExpectedPrice] = useState(250);
+  const [expectedPrice, setExpectedPrice] = useState(0);
   const [currency, setCurrency] = useState('USD');
 
   // Costs
-  const [seedsCost, setSeedsCost] = useState(3200);
-  const [fertCost, setFertCost] = useState(4500);
-  const [protectCost, setProtectCost] = useState(1800);
-  const [laborCost, setLaborCost] = useState(3500);
-  const [irrigCost, setIrrigCost] = useState(1200);
-  const [machineryCost, setMachineryCost] = useState(2900);
-  const [rentCost, setRentCost] = useState(4000);
-  const [miscCost, setMiscCost] = useState(900);
+  const [seedsCost, setSeedsCost] = useState(0);
+  const [fertCost, setFertCost] = useState(0);
+  const [protectCost, setProtectCost] = useState(0);
+  const [laborCost, setLaborCost] = useState(0);
+  const [irrigCost, setIrrigCost] = useState(0);
+  const [machineryCost, setMachineryCost] = useState(0);
+  const [rentCost, setRentCost] = useState(0);
+  const [miscCost, setMiscCost] = useState(0);
 
   const [savedSuccessMsg, setSavedSuccessMsg] = useState(false);
 
@@ -453,7 +453,7 @@ export default function ProfitPage() {
             </div>
 
             {/* Saved Scenarios Comparison List */}
-            {profile?.savedScenarios && profile.savedScenarios.length > 0 && (
+            {profile?.savedScenarios && profile.savedScenarios.length > 0 ? (
               <div className="bg-white rounded-3xl border border-[#DCE5DC] p-6 shadow-bento space-y-4">
                 <h4 className="text-sm font-extrabold text-[#1C2922]">Saved Scenarios in Workspace</h4>
                 <div className="space-y-2">
@@ -482,6 +482,13 @@ export default function ProfitPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl border border-[#DCE5DC] p-6 shadow-bento text-center space-y-2">
+                <h4 className="text-sm font-extrabold text-[#1C2922]">No Saved Scenarios</h4>
+                <p className="text-xs text-[#3D4A3B]">
+                  Fill in your crop parameters and costs above, then click &quot;Save Scenario&quot; to keep track of your seasonal models.
+                </p>
               </div>
             )}
 

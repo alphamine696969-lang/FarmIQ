@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Sprout, Lock, Mail, User, Globe2, ArrowRight, ShieldCheck } from 'lucide-react';
+import { GoogleSignInButton } from '@/components/auth/GoogleAuth';
 import { getStoredUserProfile, saveStoredUserProfile } from '@/lib/data/userState';
 
 export default function SignupPage() {
@@ -22,9 +23,10 @@ export default function SignupPage() {
     const existing = getStoredUserProfile();
     const updated = {
       ...existing,
-      displayName: name || 'Farmer',
-      email: email || 'farmer@farmiq.demo',
+      displayName: name.trim() || 'Farm Owner',
+      email: email.trim(),
       country: country,
+      authProvider: 'email',
     };
     saveStoredUserProfile(updated);
 
@@ -50,6 +52,21 @@ export default function SignupPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
         <div className="bg-white py-8 px-6 sm:px-10 shadow-bento rounded-3xl border border-[#DCE5DC] space-y-6">
+          
+          {/* Google Account Authentication */}
+          <div className="space-y-3">
+            <GoogleSignInButton label="Sign up with Google" />
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[#DCE5DC]" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase tracking-wider">
+              <span className="bg-white px-3 text-[#3D4A3B] font-bold text-[10px]">Or register with email</span>
+            </div>
+          </div>
+
           <form onSubmit={handleSignUp} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-[#1C2922] uppercase tracking-wider mb-1.5">
@@ -78,7 +95,7 @@ export default function SignupPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@farmiq.demo"
+                  placeholder="farmer@domain.com"
                   className="w-full px-4 py-3 text-sm rounded-2xl border border-[#DCE5DC] bg-[#F3FCF3]/60 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#1BC447] focus:border-[#1BC447] text-[#1C2922] transition-all"
                 />
                 <Mail className="w-4 h-4 text-[#3D4A3B]/60 absolute right-4 top-3.5" />

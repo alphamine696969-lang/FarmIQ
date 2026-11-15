@@ -13,19 +13,14 @@ import {
   ScanLine,
   Compass,
   ArrowRight,
-  AlertTriangle,
-  Clock,
   CheckCircle2,
-  Calendar,
   Layers,
   DollarSign,
   Droplets,
-  ShieldCheck,
   Plus,
   ArrowUpRight
 } from 'lucide-react';
 import { getStoredUserProfile, UserProfile } from '@/lib/data/userState';
-import { SAMPLE_WEATHER_DATA } from '@/lib/data/weatherData';
 
 export default function DashboardPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -49,12 +44,18 @@ export default function DashboardPage() {
               <span>Telemetry Control Active • Level 1 Verified</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-              Good day, {profile?.displayName || 'Farmer Alex'}
+              Good day, {profile?.displayName || 'Farmer'}
             </h2>
-            <p className="text-white/80 text-sm max-w-xl font-medium">
-              Currently monitoring <strong>{activeFarm?.name}</strong> ({activeFarm?.areaTotal} {activeFarm?.areaUnit}s in {activeFarm?.region || 'United States'}). 
-              Live telemetry is encrypted and private to your tenant.
-            </p>
+            {activeFarm ? (
+              <p className="text-white/80 text-sm max-w-xl font-medium">
+                Currently monitoring <strong>{activeFarm.name}</strong> ({activeFarm.areaTotal} {activeFarm.areaUnit}s in {activeFarm.region || activeFarm.country || 'holding'}). 
+                Live telemetry is encrypted and private to your tenant.
+              </p>
+            ) : (
+              <p className="text-white/80 text-sm max-w-xl font-medium">
+                Welcome to FarmIQ. Register your farm holding to begin tracking plots, regional weather, and financial scenarios.
+              </p>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-3 relative z-10 shrink-0">
@@ -91,7 +92,13 @@ export default function DashboardPage() {
             <div>
               <p className="text-xs font-bold text-[#3D4A3B] uppercase tracking-wider">Total Farm Holding</p>
               <p className="text-3xl font-extrabold text-[#1C2922] mt-1 tabular-nums">
-                {activeFarm?.areaTotal} <span className="text-base font-semibold text-[#3D4A3B]">{activeFarm?.areaUnit}s</span>
+                {activeFarm ? (
+                  <>
+                    {activeFarm.areaTotal} <span className="text-base font-semibold text-[#3D4A3B]">{activeFarm.areaUnit}s</span>
+                  </>
+                ) : (
+                  <span className="text-2xl font-bold text-[#3D4A3B]">0 acres</span>
+                )}
               </p>
             </div>
             <p className="text-[11px] text-[#153D2B] font-bold flex items-center gap-1.5 pt-1 border-t border-[#DCE5DC]">
@@ -113,12 +120,16 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-xs font-bold text-[#3D4A3B] uppercase tracking-wider">Projected Revenue</p>
-              <p className="text-3xl font-extrabold text-[#153D2B] mt-1 tabular-nums">
-                {profile?.preferences.preferredCurrency} {primaryScenario ? primaryScenario.result.grossRevenue.toLocaleString() : '27,000'}
-              </p>
+              {primaryScenario ? (
+                <p className="text-3xl font-extrabold text-[#153D2B] mt-1 tabular-nums">
+                  {profile?.preferences.preferredCurrency} {primaryScenario.result.grossRevenue.toLocaleString()}
+                </p>
+              ) : (
+                <p className="text-2xl font-bold text-[#3D4A3B] mt-1 tabular-nums">—</p>
+              )}
             </div>
             <p className="text-[11px] text-[#3D4A3B] font-semibold pt-1 border-t border-[#DCE5DC]">
-              Model: <span className="text-[#1C2922] font-bold">{primaryScenario?.name || 'Winter Wheat'}</span>
+              Model: <span className="text-[#1C2922] font-bold">{primaryScenario?.name || 'No scenarios modeled'}</span>
             </p>
           </div>
 
@@ -129,13 +140,13 @@ export default function DashboardPage() {
                 <TrendingUp className="w-5 h-5 text-[#1BC447]" />
               </div>
               <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#153D2B] bg-[#EDF6ED] px-2.5 py-0.5 rounded-full border border-[#DCE5DC]">
-                ROI {primaryScenario ? `${primaryScenario.result.roiPercentage}%` : '22.7%'}
+                {primaryScenario ? `ROI ${primaryScenario.result.roiPercentage}%` : 'ROI —'}
               </span>
             </div>
             <div>
               <p className="text-xs font-bold text-[#3D4A3B] uppercase tracking-wider">Net Operating Margin</p>
               <p className="text-3xl font-extrabold text-[#153D2B] mt-1 tabular-nums">
-                {primaryScenario ? `${primaryScenario.result.marginPercentage}%` : '18.5%'}
+                {primaryScenario ? `${primaryScenario.result.marginPercentage}%` : '—'}
               </p>
             </div>
             <p className="text-[11px] text-[#153D2B] font-bold pt-1 border-t border-[#DCE5DC]">
@@ -154,47 +165,21 @@ export default function DashboardPage() {
               </span>
             </div>
             <div>
-              <p className="text-xs font-bold text-[#3D4A3B] uppercase tracking-wider">Canopy & Soil State</p>
-              <p className="text-3xl font-extrabold text-[#1C2922] mt-1 tabular-nums">
-                {SAMPLE_WEATHER_DATA.current.tempC}°C <span className="text-base font-semibold text-[#3D4A3B]">/ {SAMPLE_WEATHER_DATA.current.soilMoisturePercent}% moist</span>
+              <p className="text-xs font-bold text-[#3D4A3B] uppercase tracking-wider">Field Agro-Meteorology</p>
+              <p className="text-sm font-extrabold text-[#1C2922] mt-1">
+                {activeFarm?.region ? `Active for ${activeFarm.region}` : 'Location monitoring ready'}
               </p>
-            </div>
-            <p className="text-[11px] text-[#153D2B] font-bold flex items-center gap-1.5 pt-1 border-t border-[#DCE5DC]">
-              <Droplets className="w-3.5 h-3.5 text-[#33B3FC]" />
-              <span>Optimal Spray Window Today</span>
-            </p>
-          </div>
-
-        </div>
-
-        {/* Agro Weather & Hazard Alert Banner (Harvest Warning #FFF6EB / #FD9D1A) */}
-        {SAMPLE_WEATHER_DATA.alerts.length > 0 && (
-          <div className="p-6 rounded-3xl bg-[#FFF6EB] border border-[#FFE0B2] shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-2xl bg-[#FFE0B2] text-[#895100] flex items-center justify-center shrink-0 border border-[#FD9D1A]/30">
-                <AlertTriangle className="w-5 h-5 text-[#FD9D1A]" />
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-extrabold text-[#5d3500]">{SAMPLE_WEATHER_DATA.alerts[1]?.title || 'Agro Alert'}</h3>
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-[#FD9D1A] text-white px-2.5 py-0.5 rounded-full">
-                    {SAMPLE_WEATHER_DATA.alerts[1]?.alertType}
-                  </span>
-                </div>
-                <p className="text-xs text-[#895100] leading-relaxed max-w-3xl font-medium">
-                  {SAMPLE_WEATHER_DATA.alerts[1]?.description} — <strong>Agronomic Action:</strong> {SAMPLE_WEATHER_DATA.alerts[1]?.agronomicAction}
-                </p>
-              </div>
             </div>
             <Link
               href="/app/weather"
-              className="shrink-0 px-5 py-2.5 rounded-full bg-white text-[#895100] border border-[#FFE0B2] text-xs font-bold hover:bg-[#FFE0B2] transition-colors flex items-center gap-1.5 shadow-xs"
+              className="text-[11px] text-[#153D2B] font-bold flex items-center gap-1.5 pt-1 border-t border-[#DCE5DC] hover:text-[#1BC447]"
             >
-              <span>Inspect Forecast</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <Droplets className="w-3.5 h-3.5 text-[#33B3FC]" />
+              <span>Inspect Spray Windows & ET0 &rarr;</span>
             </Link>
           </div>
-        )}
+
+        </div>
 
         {/* Main Grid: Active Field Plots + Market Watch */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -215,42 +200,58 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            <div className="space-y-3.5">
-              {activeFarm?.plots.map((plot) => (
-                <div
-                  key={plot.id}
-                  className="p-5 rounded-2xl border border-[#DCE5DC] bg-[#F3FCF3] hover:bg-white hover:border-[#1BC447]/50 hover:shadow-xs transition-smooth flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2.5">
-                      <h4 className="text-sm font-extrabold text-[#1C2922]">{plot.name}</h4>
-                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                        plot.status === 'Planted' ? 'bg-[#EDF6ED] text-[#153D2B] border border-[#DCE5DC]' :
-                        plot.status === 'Harvesting' ? 'bg-[#FFF6EB] text-[#895100] border border-[#FFE0B2]' :
-                        'bg-slate-100 text-slate-800'
-                      }`}>
-                        {plot.status}
-                      </span>
+            {activeFarm && activeFarm.plots.length > 0 ? (
+              <div className="space-y-3.5">
+                {activeFarm.plots.map((plot) => (
+                  <div
+                    key={plot.id}
+                    className="p-5 rounded-2xl border border-[#DCE5DC] bg-[#F3FCF3] hover:bg-white hover:border-[#1BC447]/50 hover:shadow-xs transition-smooth flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2.5">
+                        <h4 className="text-sm font-extrabold text-[#1C2922]">{plot.name}</h4>
+                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                          plot.status === 'Planted' ? 'bg-[#EDF6ED] text-[#153D2B] border border-[#DCE5DC]' :
+                          plot.status === 'Harvesting' ? 'bg-[#FFF6EB] text-[#895100] border border-[#FFE0B2]' :
+                          'bg-slate-100 text-slate-800'
+                        }`}>
+                          {plot.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#3D4A3B] font-medium">
+                        Crop: <strong className="text-[#1C2922]">{plot.currentCrop || 'Fallow'}</strong> • <span className="tabular-nums">{plot.areaValue}</span> {plot.areaUnit}s
+                      </p>
                     </div>
-                    <p className="text-xs text-[#3D4A3B] font-medium">
-                      Crop: <strong className="text-[#1C2922]">{plot.currentCrop || 'Fallow'}</strong> • <span className="tabular-nums">{plot.areaValue}</span> {plot.areaUnit}s
-                    </p>
-                  </div>
 
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <div className="bg-white px-3 py-1 rounded-full border border-[#DCE5DC] text-[#3D4A3B] font-medium">
-                      Soil: <span className="font-bold text-[#1C2922]">{plot.soilType}</span>
-                    </div>
-                    <div className="bg-white px-3 py-1 rounded-full border border-[#DCE5DC] text-[#3D4A3B] font-medium">
-                      pH: <span className="font-extrabold text-[#153D2B] tabular-nums">{plot.soilPh}</span>
-                    </div>
-                    <div className="bg-white px-3 py-1 rounded-full border border-[#DCE5DC] text-[#3D4A3B] font-medium">
-                      Irrigation: <span className="font-bold text-[#1C2922]">{plot.irrigationType}</span>
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <div className="bg-white px-3 py-1 rounded-full border border-[#DCE5DC] text-[#3D4A3B] font-medium">
+                        Soil: <span className="font-bold text-[#1C2922]">{plot.soilType}</span>
+                      </div>
+                      <div className="bg-white px-3 py-1 rounded-full border border-[#DCE5DC] text-[#3D4A3B] font-medium">
+                        pH: <span className="font-extrabold text-[#153D2B] tabular-nums">{plot.soilPh}</span>
+                      </div>
+                      <div className="bg-white px-3 py-1 rounded-full border border-[#DCE5DC] text-[#3D4A3B] font-medium">
+                        Irrigation: <span className="font-bold text-[#1C2922]">{plot.irrigationType}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center text-[#3D4A3B] space-y-3 border border-dashed border-[#DCE5DC] rounded-3xl bg-[#F3FCF3]">
+                <p className="text-sm font-extrabold text-[#1C2922]">No field plots monitored yet</p>
+                <p className="text-xs max-w-md mx-auto">
+                  Add your agricultural plots to record soil type, test pH levels, irrigation infrastructure, and active crop stages.
+                </p>
+                <Link
+                  href="/app/farms"
+                  className="px-5 py-2.5 rounded-full bg-[#1BC447] hover:bg-[#16a73c] text-[#1C2922] text-xs font-extrabold inline-flex items-center gap-1.5 shadow-xs"
+                >
+                  <Plus className="w-4 h-4 text-[#1C2922]" />
+                  <span>Manage Holdings & Plots</span>
+                </Link>
+              </div>
+            )}
 
             {/* Quick Actions Bar */}
             <div className="pt-4 border-t border-[#DCE5DC] grid grid-cols-2 sm:grid-cols-4 gap-3">

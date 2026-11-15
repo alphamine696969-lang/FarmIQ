@@ -163,45 +163,66 @@ export default function FarmsPage() {
         </div>
 
         {/* Farm Cards Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {profile?.farms.map((farm) => {
-            const isSelected = farm.id === activeFarm?.id;
-            return (
-              <div
-                key={farm.id}
-                onClick={() => setSelectedFarmId(farm.id)}
-                className={`p-7 rounded-3xl border cursor-pointer transition-smooth space-y-3.5 ${
-                  isSelected
-                    ? 'border-[#1BC447] bg-white ring-2 ring-[#1BC447]/30 shadow-bento-hover'
-                    : 'border-[#DCE5DC] bg-[#F3FCF3]/60 hover:bg-white hover:border-[#DCE5DC] shadow-bento'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#153D2B] bg-[#EDF6ED] px-2.5 py-0.5 rounded-full border border-[#DCE5DC]">
-                      {farm.country}
-                    </span>
-                    <h3 className="text-lg font-extrabold text-[#1C2922] mt-1">{farm.name}</h3>
-                    <p className="text-xs text-[#3D4A3B] flex items-center gap-1 font-medium">
-                      <MapPin className="w-3.5 h-3.5 text-[#153D2B]" />
-                      <span>{farm.region}</span>
-                    </p>
+        {(!profile?.farms || profile.farms.length === 0) ? (
+          <div className="bg-white rounded-3xl border border-[#DCE5DC] p-10 text-center space-y-4 shadow-bento">
+            <div className="w-14 h-14 rounded-2xl bg-[#EDF6ED] text-[#153D2B] flex items-center justify-center mx-auto border border-[#DCE5DC]">
+              <Layers className="w-7 h-7 text-[#1BC447]" />
+            </div>
+            <div className="space-y-1 max-w-md mx-auto">
+              <h3 className="text-lg font-extrabold text-[#1C2922]">No agricultural holdings registered yet</h3>
+              <p className="text-xs text-[#3D4A3B]">
+                Register your farm or land holding to manage field plots, soil records, irrigation setups, and active crop stages.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowAddFarmModal(true)}
+              className="px-6 py-3 rounded-full bg-[#1BC447] hover:bg-[#16a73c] text-[#1C2922] font-extrabold text-xs shadow-glow-lime transition-smooth inline-flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4 text-[#1C2922]" />
+              <span>Add Your First Farm</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {profile.farms.map((farm) => {
+              const isSelected = farm.id === activeFarm?.id;
+              return (
+                <div
+                  key={farm.id}
+                  onClick={() => setSelectedFarmId(farm.id)}
+                  className={`p-7 rounded-3xl border cursor-pointer transition-smooth space-y-3.5 ${
+                    isSelected
+                      ? 'border-[#1BC447] bg-white ring-2 ring-[#1BC447]/30 shadow-bento-hover'
+                      : 'border-[#DCE5DC] bg-[#F3FCF3]/60 hover:bg-white hover:border-[#DCE5DC] shadow-bento'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#153D2B] bg-[#EDF6ED] px-2.5 py-0.5 rounded-full border border-[#DCE5DC]">
+                        {farm.country}
+                      </span>
+                      <h3 className="text-lg font-extrabold text-[#1C2922] mt-1">{farm.name}</h3>
+                      <p className="text-xs text-[#3D4A3B] flex items-center gap-1 font-medium">
+                        <MapPin className="w-3.5 h-3.5 text-[#153D2B]" />
+                        <span>{farm.region}</span>
+                      </p>
+                    </div>
+                    {isSelected && (
+                      <span className="p-1 rounded-full bg-[#EDF6ED] text-[#153D2B] border border-[#DCE5DC]">
+                        <CheckCircle2 className="w-4 h-4 text-[#1BC447]" />
+                      </span>
+                    )}
                   </div>
-                  {isSelected && (
-                    <span className="p-1 rounded-full bg-[#EDF6ED] text-[#153D2B] border border-[#DCE5DC]">
-                      <CheckCircle2 className="w-4 h-4 text-[#1BC447]" />
-                    </span>
-                  )}
-                </div>
 
-                <div className="pt-3.5 border-t border-[#DCE5DC] flex items-center justify-between text-xs font-bold">
-                  <span className="text-[#153D2B] font-extrabold tabular-nums">{farm.areaTotal} {farm.areaUnit}s Total</span>
-                  <span className="text-[#3D4A3B] font-semibold">{farm.plots.length} field plots</span>
+                  <div className="pt-3.5 border-t border-[#DCE5DC] flex items-center justify-between text-xs font-bold">
+                    <span className="text-[#153D2B] font-extrabold tabular-nums">{farm.areaTotal} {farm.areaUnit}s Total</span>
+                    <span className="text-[#3D4A3B] font-semibold">{farm.plots.length} field plots</span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Active Farm Detail & Plot Roster Bento Container */}
         {activeFarm && (

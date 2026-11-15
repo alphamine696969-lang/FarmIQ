@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import { PageTransitionProvider } from '@/components/transitions/PageTransitionProvider';
+import { SplashScreen } from '@/components/splash/SplashScreen';
 
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
+  themeColor: '#FBFDFA',
 };
 
 export const metadata: Metadata = {
@@ -39,6 +42,8 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-[#F3FCF3] text-[#1C2922] font-sans min-h-screen antialiased selection:bg-[#1BC447] selection:text-[#153D2B]">
+        <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
+        <SplashScreen />
         <PageTransitionProvider>
           {children}
         </PageTransitionProvider>

@@ -18,15 +18,30 @@ import {
   RotateCcw,
   ShieldCheck,
   CheckCircle2,
-  Lock
+  Lock,
+  User,
+  Play,
+  LogOut
 } from 'lucide-react';
+import { GoogleIcon, GoogleSignInButton } from '@/components/auth/GoogleAuth';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
+  const [country, setCountry] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
-    setProfile(getStoredUserProfile());
+    const user = getStoredUserProfile();
+    setProfile(user);
+    if (user) {
+      setDisplayName(user.displayName || '');
+      setEmail(user.email || '');
+      setCountry(user.country || '');
+    }
   }, []);
 
   const handleUpdate = (updates: Partial<UserProfile['preferences']>) => {
@@ -37,6 +52,21 @@ export default function SettingsPage() {
         ...profile.preferences,
         ...updates,
       },
+    };
+    setProfile(updated);
+    saveStoredUserProfile(updated);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2000);
+  };
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile) return;
+    const updated: UserProfile = {
+      ...profile,
+      displayName: displayName.trim() || 'Farmer',
+      email: email.trim(),
+      country: country.trim(),
     };
     setProfile(updated);
     saveStoredUserProfile(updated);
@@ -56,8 +86,11 @@ export default function SettingsPage() {
   };
 
   const handleResetData = () => {
-    if (confirm("Reset all farm profiles and scenarios to default verified demonstration state?")) {
+    if (confirm("Clear all local farm profiles, plots, and scenarios to start with a fresh clean workspace?")) {
       setProfile(INITIAL_USER_PROFILE);
+      setDisplayName('');
+      setEmail('');
+      setCountry('');
       saveStoredUserProfile(INITIAL_USER_PROFILE);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
@@ -76,7 +109,7 @@ export default function SettingsPage() {
               <FreshnessBadge status="supported" label="Saved Locally" />
             </div>
             <p className="text-xs text-[#3D4A3B] mt-1 font-medium">
-              Configure units of measurement, primary accounting currency, and notification thresholds.
+              Configure your profile identity, units of measurement, primary accounting currency, and notification thresholds.
             </p>
           </div>
           {saveSuccess && (
@@ -86,6 +119,124 @@ export default function SettingsPage() {
             </span>
           )}
         </div>
+
+        {/* Profile Identity Bento Card */}
+        <form onSubmit={handleSaveProfile} className="bg-white rounded-3xl border border-[#DCE5DC] p-7 shadow-bento space-y-6">
+          <h3 className="text-base font-extrabold text-[#1C2922] flex items-center gap-2.5 border-b border-[#DCE5DC] pb-3.5">
+            <div className="w-8 h-8 rounded-xl bg-[#EDF6ED] text-[#153D2B] flex items-center justify-center border border-[#DCE5DC]">
+              <User className="w-4 h-4 text-[#1BC447]" />
+            </div>
+            <span>Farmer Profile & Identity</span>
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div>
+              <label className="block font-bold text-[#3D4A3B] mb-1.5">Display Name</label>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="e.g. John Doe or Green Farm"
+                className="w-full px-4 py-2.5 rounded-2xl border border-[#DCE5DC] text-[#1C2922] bg-[#F3FCF3] font-medium focus:outline-none focus:ring-2 focus:ring-[#1BC447]"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-[#3D4A3B] mb-1.5">Contact Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="e.g. farmer@example.com"
+                className="w-full px-4 py-2.5 rounded-2xl border border-[#DCE5DC] text-[#1C2922] bg-[#F3FCF3] font-medium focus:outline-none focus:ring-2 focus:ring-[#1BC447]"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-[#3D4A3B] mb-1.5">Primary Country</label>
+              <input
+                type="text"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                placeholder="e.g. United States, India, France"
+                className="w-full px-4 py-2.5 rounded-2xl border border-[#DCE5DC] text-[#1C2922] bg-[#F3FCF3] font-medium focus:outline-none focus:ring-2 focus:ring-[#1BC447]"
+              />
+            </div>
+          </div>
+
+          {/* Google Account Authentication Status */}
+          {profile?.authProvider === 'google' ? (
+            <div className="p-4 bg-[#EDF6ED] border border-[#DCE5DC] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3">
+                {profile.avatarUrl || profile.photoUrl ? (
+                  <img
+                    src={profile.avatarUrl || profile.photoUrl}
+                    alt={profile.displayName}
+                    className="w-10 h-10 rounded-full border border-[#DCE5DC] object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-white border border-[#DCE5DC] flex items-center justify-center">
+                    <GoogleIcon className="w-5 h-5 shrink-0" />
+                  </div>
+                )}
+                <div>
+                  <p className="font-extrabold text-[#1C2922]">Connected with Google Account</p>
+                  <p className="text-[11px] text-[#3D4A3B]">{profile.email || email}</p>
+                  {profile.googleSub && (
+                    <p className="text-[10px] text-[#3D4A3B]/60 font-mono">Google ID: {profile.googleSub}</p>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!profile) return;
+                  await fetch('/api/auth/me', { method: 'DELETE' }).catch(() => {});
+                  const updated: UserProfile = { ...profile, authProvider: undefined, avatarUrl: undefined, photoUrl: undefined, googleSub: undefined };
+                  setProfile(updated);
+                  saveStoredUserProfile(updated);
+                  setSaveSuccess(true);
+                }}
+                className="px-4 py-2 rounded-full border border-[#DCE5DC] bg-white hover:bg-rose-50 text-[11px] font-bold text-[#BA1A1A] transition-colors self-start sm:self-auto cursor-pointer"
+              >
+                Disconnect Google
+              </button>
+            </div>
+          ) : (
+            <div className="p-4 bg-[#F3FCF3] border border-[#DCE5DC] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3">
+                <GoogleIcon className="w-5 h-5 shrink-0" />
+                <div>
+                  <p className="font-extrabold text-[#1C2922]">Link Google Account</p>
+                  <p className="text-[11px] text-[#3D4A3B]">Connect for instant one-click authentication and verified profile sync.</p>
+                </div>
+              </div>
+              <div className="w-full sm:w-auto shrink-0">
+                <GoogleSignInButton
+                  label="Connect Google"
+                  className="py-2.5 px-4 text-xs font-bold"
+                  onSuccess={() => {
+                    const user = getStoredUserProfile();
+                    setProfile(user);
+                    if (user) {
+                      setDisplayName(user.displayName);
+                      setEmail(user.email);
+                    }
+                    setSaveSuccess(true);
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="px-6 py-2.5 rounded-full bg-[#1BC447] hover:bg-[#16a73c] text-[#1C2922] font-extrabold text-xs shadow-glow-lime transition-smooth"
+          >
+            Save Profile Details
+          </button>
+        </form>
 
         {/* Units & Currency Bento Card */}
         <div className="bg-white rounded-3xl border border-[#DCE5DC] p-7 shadow-bento space-y-6">
@@ -172,7 +323,7 @@ export default function SettingsPage() {
               <span>Data Governance & Backup Portability</span>
             </h3>
             <p className="text-xs text-[#3D4A3B] font-medium">
-              Export your farm records in open JSON format or reset to default demo scenario state.
+              Export your farm records in open JSON format or reset your workspace to a clean initial state.
             </p>
           </div>
 
@@ -186,11 +337,34 @@ export default function SettingsPage() {
             </button>
 
             <button
+              type="button"
+              onClick={() => {
+                try { sessionStorage.removeItem('farmiq_splash_viewed'); } catch {}
+                window.location.href = '/?splash=1';
+              }}
+              className="px-6 py-3 rounded-full border border-[#DCE5DC] hover:bg-[#EDF6ED] text-xs font-bold text-[#153D2B] flex items-center gap-2 transition-smooth shadow-xs"
+            >
+              <Play className="w-4 h-4 text-[#1BC447]" />
+              <span>Replay Splash Screen</span>
+            </button>
+
+            <button
               onClick={handleResetData}
-              className="px-6 py-3 rounded-full border border-[#DCE5DC] hover:bg-rose-50 text-xs font-bold text-[#BA1A1A] flex items-center gap-2 transition-smooth shadow-xs"
+              className="px-6 py-3 rounded-full border border-[#DCE5DC] hover:bg-rose-50 text-xs font-bold text-[#BA1A1A] flex items-center gap-2 transition-smooth shadow-xs cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" />
-              <span>Reset to Sample State</span>
+              <span>Clear Workspace & Start Clean</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                router.push('/login');
+              }}
+              className="px-6 py-3 rounded-full border border-[#DCE5DC] hover:bg-[#F3FCF3] text-xs font-bold text-[#1C2922] flex items-center gap-2 transition-smooth shadow-xs cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 text-[#3D4A3B]" />
+              <span>Sign Out</span>
             </button>
           </div>
         </div>

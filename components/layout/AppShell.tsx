@@ -23,6 +23,7 @@ import {
   Plus
 } from 'lucide-react';
 import { getStoredUserProfile, UserProfile, saveStoredUserProfile } from '@/lib/data/userState';
+import { GoogleIcon } from '@/components/auth/GoogleAuth';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -48,7 +49,29 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const [farmDropdownOpen, setFarmDropdownOpen] = useState(false);
 
   useEffect(() => {
-    setProfile(getStoredUserProfile());
+    const localProfile = getStoredUserProfile();
+    setProfile(localProfile);
+
+    // Sync server-side Google session if present
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated && data.user) {
+          const user = data.user;
+          const merged: UserProfile = {
+            ...localProfile,
+            displayName: user.name || localProfile.displayName || 'Farmer',
+            email: user.email || localProfile.email,
+            avatarUrl: user.picture || localProfile.avatarUrl,
+            photoUrl: user.picture || localProfile.photoUrl,
+            googleSub: user.sub || localProfile.googleSub,
+            authProvider: 'google',
+          };
+          setProfile(merged);
+          saveStoredUserProfile(merged);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const activeFarm = profile?.farms.find((f) => f.id === profile.activeFarmId) || profile?.farms[0];
@@ -119,15 +142,17 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           <div className="p-4 border-b border-[#1C4D37]/80 relative">
             <div className="text-[11px] font-bold text-[#1BC447] uppercase tracking-wider mb-2 flex items-center justify-between">
               <span>Active Agricultural Holding</span>
-              <span className="text-[10px] text-white/50">{profile?.farms.length} registered</span>
+              <span className="text-[10px] text-white/50">{profile?.farms.length || 0} registered</span>
             </div>
             <button
               onClick={() => setFarmDropdownOpen(!farmDropdownOpen)}
               className="w-full text-left bg-[#EDF6ED] hover:bg-white text-[#153D2B] rounded-2xl p-3 flex items-center justify-between transition-colors shadow-xs border border-[#DCE5DC]"
             >
               <div className="truncate">
-                <p className="text-xs font-bold truncate text-[#153D2B]">{activeFarm?.name || 'My Farm'}</p>
-                <p className="text-[11px] text-[#3D4A3B] truncate font-medium">{activeFarm?.region || 'Region'} • {activeFarm?.areaTotal} {activeFarm?.areaUnit}s</p>
+                <p className="text-xs font-bold truncate text-[#153D2B]">{activeFarm?.name || 'No Farm Registered'}</p>
+                <p className="text-[11px] text-[#3D4A3B] truncate font-medium">
+                  {activeFarm ? `${activeFarm.region || activeFarm.country || 'Region'} • ${activeFarm.areaTotal} ${activeFarm.areaUnit}s` : 'Click to add a farm'}
+                </p>
               </div>
               <ChevronDown className="w-4 h-4 text-[#153D2B] shrink-0 ml-1" />
             </button>
@@ -251,15 +276,32 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             </div>
 
             {/* User profile avatar */}
-            <div className="flex items-center gap-2 pl-3 border-l border-[#DCE5DC]">
-              <div className="w-9 h-9 rounded-full bg-[#153D2B] text-[#1BC447] font-extrabold text-xs flex items-center justify-center border border-[#1C4D37] shadow-sm">
-                {profile?.displayName?.charAt(0) || 'A'}
+            <Link href="/app/settings" className="flex items-center gap-2 pl-3 border-l border-[#DCE5DC] hover:opacity-85 transition-opacity">
+              <div className={`w-9 h-9 rounded-full font-extrabold text-xs flex items-center justify-center border shadow-sm overflow-hidden ${
+                profile?.authProvider === 'google'
+                  ? 'bg-white border-[#DCE5DC] text-[#4285F4]'
+                  : 'bg-[#153D2B] text-[#1BC447] border-[#1C4D37]'
+              }`}>
+                {profile?.avatarUrl || profile?.photoUrl ? (
+                  <img
+                    src={profile.avatarUrl || profile.photoUrl}
+                    alt={profile.displayName || 'Google Profile'}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : profile?.authProvider === 'google' ? (
+                  <GoogleIcon className="w-5 h-5" />
+                ) : (
+                  profile?.displayName?.charAt(0) || 'F'
+                )}
               </div>
               <div className="text-left text-xs">
                 <p className="font-extrabold text-[#1C2922] leading-none">{profile?.displayName || 'Farmer'}</p>
-                <p className="text-[10px] text-[#3D4A3B] font-semibold leading-tight">Operator Level 1</p>
+                <p className="text-[10px] text-[#3D4A3B] font-semibold leading-tight">
+                  {profile?.authProvider === 'google' ? 'Google Account' : (profile?.email ? 'Verified Email' : 'Operator Level 1')}
+                </p>
               </div>
-            </div>
+            </Link>
           </div>
         </header>
 
