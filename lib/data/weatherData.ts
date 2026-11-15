@@ -1,6 +1,11 @@
 /**
  * FarmIQ Agro-Meteorological Weather Service Model
  * Complies with FIQ-062, FIQ-063 and FarmIQ Provenance requirements.
+ *
+ * ADR-020: Apple WeatherKit is the primary weather service (with Open-Meteo
+ * as the keyless fallback and soil/ET0 supplement). NASA POWER branding and
+ * climatology payloads were removed; fields the new providers cannot supply
+ * are nullable and rendered as "not available" — never invented.
  */
 
 export interface AgroWeatherForecastDay {
@@ -10,9 +15,12 @@ export interface AgroWeatherForecastDay {
   tempMinC: number;
   precipitationMm: number;
   precipitationChance: number;
-  humidityPercent: number;
-  windSpeedKmh: number;
-  evapotranspirationMm: number;
+  /** null when the provider did not report a mean humidity for the day. */
+  humidityPercent: number | null;
+  /** null when the provider did not report wind for the day. */
+  windSpeedKmh: number | null;
+  /** FAO-56 ET0 (mm/day); null when not provided by the active provider. */
+  evapotranspirationMm: number | null;
   condition: string;
   icon: string;
   sprayingWindowRating: 'Excellent' | 'Moderate' | 'Unfavorable';
@@ -43,196 +51,18 @@ export interface FarmWeatherSnapshot {
     feelsLikeC: number;
     humidityPercent: number;
     windSpeedKmh: number;
-    soilTempC: number;
-    soilMoisturePercent: number;
-    solarRadiationWm2: number;
-    dewPointC: number;
-    uvIndex: number;
+    /** null when the active providers do not report soil temperature. */
+    soilTempC: number | null;
+    /** null when the active providers do not report soil moisture. */
+    soilMoisturePercent: number | null;
+    /** null when the active providers do not report solar radiation. */
+    solarRadiationWm2: number | null;
+    dewPointC: number | null;
+    uvIndex: number | null;
     condition: string;
   };
   forecast: AgroWeatherForecastDay[];
   alerts: AgroAlert[];
-  nasaPower?: {
-    solarRadiationMonthly: Record<string, number>;
-    precipitationMonthly: Record<string, number>;
-    relativeHumidityMonthly: Record<string, number>;
-    temperatureMeanMonthly: Record<string, number>;
-    temperatureMaxMonthly: Record<string, number>;
-    temperatureMinMonthly: Record<string, number>;
-    annualAverageSolarMJ: number;
-    annualAveragePrecipMm: number;
-    annualAverageTempC: number;
-    currentMonthBenchmark: {
-      month: string;
-      solarMJ: number;
-      precipMmPerDay: number;
-      tempMeanC: number;
-    };
-    provenance: {
-      source: string;
-      datasetRange: string;
-      community: string;
-      elevationMeters?: number;
-      coordinates: [number, number];
-    };
-    retrievedAt: string;
-  } | null;
+  /** Provenance note for fields served by a secondary provider (e.g. soil/ET0). */
+  supplementarySource?: string;
 }
-
-export const SAMPLE_WEATHER_DATA: FarmWeatherSnapshot = {
-  locationName: "Green Valley Farm — Plot 3 (Valley Ridge)",
-  coordinates: { lat: 40.7128, lng: -74.006 },
-  retrievedAt: "2026-10-11T12:00:00Z",
-  isSampleData: true,
-  provider: "NASA POWER Agroclimatology (Langley Research Center)",
-  current: {
-    tempC: 19.4,
-    feelsLikeC: 18.8,
-    humidityPercent: 62,
-    windSpeedKmh: 9.5,
-    soilTempC: 16.2,
-    soilMoisturePercent: 28,
-    solarRadiationWm2: 640,
-    dewPointC: 11.8,
-    uvIndex: 5,
-    condition: "Partly Cloudy"
-  },
-  forecast: [
-    {
-      date: "2026-10-11",
-      dayName: "Today",
-      tempMaxC: 22,
-      tempMinC: 12,
-      precipitationMm: 0,
-      precipitationChance: 5,
-      humidityPercent: 58,
-      windSpeedKmh: 10,
-      evapotranspirationMm: 3.8,
-      condition: "Partly Sunny",
-      icon: "sun",
-      sprayingWindowRating: "Excellent",
-      frostRisk: false,
-      fieldWorkability: "Good"
-    },
-    {
-      date: "2026-10-12",
-      dayName: "Monday",
-      tempMaxC: 24,
-      tempMinC: 14,
-      precipitationMm: 1.2,
-      precipitationChance: 25,
-      humidityPercent: 65,
-      windSpeedKmh: 12,
-      evapotranspirationMm: 4.1,
-      condition: "Scattered Clouds",
-      icon: "cloud",
-      sprayingWindowRating: "Moderate",
-      frostRisk: false,
-      fieldWorkability: "Good"
-    },
-    {
-      date: "2026-10-13",
-      dayName: "Tuesday",
-      tempMaxC: 19,
-      tempMinC: 11,
-      precipitationMm: 16.5,
-      precipitationChance: 85,
-      humidityPercent: 88,
-      windSpeedKmh: 24,
-      evapotranspirationMm: 1.9,
-      condition: "Moderate Rain & Wind",
-      icon: "cloud-rain",
-      sprayingWindowRating: "Unfavorable",
-      frostRisk: false,
-      fieldWorkability: "Saturated Soil"
-    },
-    {
-      date: "2026-10-14",
-      dayName: "Wednesday",
-      tempMaxC: 17,
-      tempMinC: 7,
-      precipitationMm: 4.0,
-      precipitationChance: 40,
-      humidityPercent: 78,
-      windSpeedKmh: 18,
-      evapotranspirationMm: 2.4,
-      condition: "Cool Showers",
-      icon: "cloud-drizzle",
-      sprayingWindowRating: "Unfavorable",
-      frostRisk: false,
-      fieldWorkability: "Moderate"
-    },
-    {
-      date: "2026-10-15",
-      dayName: "Thursday",
-      tempMaxC: 16,
-      tempMinC: 3,
-      precipitationMm: 0,
-      precipitationChance: 0,
-      humidityPercent: 52,
-      windSpeedKmh: 8,
-      evapotranspirationMm: 3.1,
-      condition: "Clear & Crisp",
-      icon: "sun",
-      sprayingWindowRating: "Excellent",
-      frostRisk: true,
-      fieldWorkability: "Good"
-    },
-    {
-      date: "2026-10-16",
-      dayName: "Friday",
-      tempMaxC: 20,
-      tempMinC: 8,
-      precipitationMm: 0,
-      precipitationChance: 10,
-      humidityPercent: 55,
-      windSpeedKmh: 11,
-      evapotranspirationMm: 3.6,
-      condition: "Sunny",
-      icon: "sun",
-      sprayingWindowRating: "Excellent",
-      frostRisk: false,
-      fieldWorkability: "Good"
-    },
-    {
-      date: "2026-10-17",
-      dayName: "Saturday",
-      tempMaxC: 21,
-      tempMinC: 10,
-      precipitationMm: 0,
-      precipitationChance: 15,
-      humidityPercent: 60,
-      windSpeedKmh: 13,
-      evapotranspirationMm: 3.7,
-      condition: "Mild & Sunny",
-      icon: "sun",
-      sprayingWindowRating: "Excellent",
-      frostRisk: false,
-      fieldWorkability: "Good"
-    }
-  ],
-  alerts: [
-    {
-      id: "alt-01",
-      alertType: "Optimal Spraying Opportunity",
-      severity: "low",
-      title: "Calm Canopy Window Today (07:00 - 15:00)",
-      description: "Low sustained wind speed (<10 km/h) and moderate RH (58%) allow even droplet deposition without drift.",
-      agronomicAction: "Complete organic foliar micronutrient applications before Tuesday's forecasted rainfall.",
-      issuedAt: "2026-10-11T06:00:00Z",
-      validUntil: "2026-10-11T16:00:00Z",
-      sourceProvider: "AgroWeather Drift & Adherence Model"
-    },
-    {
-      id: "alt-02",
-      alertType: "Frost Warning",
-      severity: "high",
-      title: "Late Week Nighttime Frost Hazard (Expected Min 3°C)",
-      description: "Radiational cooling anticipated on Thursday night with ground temps possibly nearing 0°C in low valleys.",
-      agronomicAction: "Consider protective mulching or row covers for tender vegetable seedling nurseries.",
-      issuedAt: "2026-10-11T09:30:00Z",
-      validUntil: "2026-10-15T08:00:00Z",
-      sourceProvider: "National Agro-Meteorological Service Alert Feed"
-    }
-  ]
-};

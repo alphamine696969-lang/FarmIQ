@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
 
     const snapshot = await fetchOpenMeteoForecast(lat, lon);
     const summary = summarizeWeatherForCrop(snapshot, label, country, cropName);
-    const payload = { data: summary, meta: { provider: 'NASA POWER', isLive: true, retrievedAt: snapshot.retrievedAt } };
+    const payload = { data: summary, meta: { provider: 'Open-Meteo', isLive: true, retrievedAt: snapshot.retrievedAt } };
     cacheSet(key, payload, true);
     return NextResponse.json(payload);
   } catch (error) {

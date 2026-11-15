@@ -42,6 +42,142 @@ export interface OpenMeteoSnapshot {
   retrievedAt: string;
 }
 
+/** Rich current conditions + soil for the Weather page fallback (ADR-020). */
+export interface OpenMeteoCurrentDetail {
+  tempC: number;
+  feelsLikeC: number;
+  humidityPercent: number;
+  dewPointC: number | null;
+  windSpeedKmh: number;
+  uvIndex: number | null;
+  weatherCode: number | null;
+  soilTempC: number | null;
+  soilMoisturePercent: number | null;
+}
+
+/** Day condition text from a WMO weather code (open-meteo semantics). */
+export function wmoConditionText(code: number | null): string {
+  if (code === null) return 'Unknown';
+  const map: Record<number, string> = {
+    0: 'Clear Sky',
+    1: 'Mainly Clear',
+    2: 'Partly Cloudy',
+    3: 'Overcast',
+    45: 'Fog',
+    48: 'Depositing Rime Fog',
+    51: 'Light Drizzle',
+    53: 'Moderate Drizzle',
+    55: 'Dense Drizzle',
+    56: 'Light Freezing Drizzle',
+    57: 'Dense Freezing Drizzle',
+    61: 'Slight Rain',
+    63: 'Moderate Rain',
+    65: 'Heavy Rain',
+    66: 'Light Freezing Rain',
+    67: 'Heavy Freezing Rain',
+    71: 'Slight Snow',
+    73: 'Moderate Snow',
+    75: 'Heavy Snow',
+    77: 'Snow Grains',
+    80: 'Slight Rain Showers',
+    81: 'Moderate Rain Showers',
+    82: 'Violent Rain Showers',
+    85: 'Slight Snow Showers',
+    86: 'Heavy Snow Showers',
+    95: 'Thunderstorm',
+    96: 'Thunderstorm with Hail',
+    99: 'Thunderstorm with Heavy Hail'
+  };
+  return map[code] ?? 'Unknown';
+}
+
+/** Rich agro snapshot: full current conditions (incl. soil) + daily with ET0. */
+export interface OpenMeteoAgroSnapshot {
+  current: OpenMeteoCurrentDetail;
+  /** Shortwave solar radiation at ground level, W/m² (null when not reported). */
+  shortwaveWm2: number | null;
+  daily: OpenMeteoDaily[];
+  retrievedAt: string;
+}
+
+/**
+ * Single-call agro weather snapshot (ADR-020): current conditions including
+ * soil temperature/moisture and solar radiation, plus a daily forecast with
+ * FAO-56 ET0. Used by the Weather page directly (fallback) or as the
+ * soil/ET0 supplement alongside Apple WeatherKit.
+ */
+export async function fetchOpenMeteoAgroSnapshot(
+  lat: number,
+  lon: number,
+  days = 7
+): Promise<OpenMeteoAgroSnapshot> {
+  const params = new URLSearchParams({
+    latitude: String(lat),
+    longitude: String(lon),
+    current:
+      'temperature_2m,relative_humidity_2m,apparent_temperature,dew_point_2m,wind_speed_10m,weather_code,uv_index,shortwave_radiation,soil_temperature_6cm,soil_moisture_3_to_9cm',
+    daily:
+      'temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,relative_humidity_2m_mean,wind_speed_10m_max,et0_fao_evapotranspiration,uv_index_max,weather_code',
+    forecast_days: String(Math.min(16, Math.max(1, days))),
+    timezone: 'auto'
+  });
+  const payload = await fetchJson(`${FORECAST_HOST}?${params.toString()}`);
+  if (typeof payload !== 'object' || payload === null) {
+    throw new Error('open_meteo_error: malformed payload');
+  }
+  const rec = payload as Record<string, unknown>;
+  const daily = rec.daily;
+  const current = rec.current;
+  if (typeof daily !== 'object' || daily === null || !Array.isArray((daily as Record<string, unknown>).time)) {
+    throw new Error('open_meteo_error: missing daily arrays');
+  }
+  const d = daily as Record<string, unknown>;
+  const times = d.time as unknown[];
+  const dayList: OpenMeteoDaily[] = [];
+  for (let i = 0; i < times.length; i += 1) {
+    if (typeof times[i] !== 'string') continue;
+    dayList.push({
+      date: times[i] as string,
+      tempMaxC: num((d.temperature_2m_max as unknown[])?.[i]) ?? NaN,
+      tempMinC: num((d.temperature_2m_min as unknown[])?.[i]) ?? NaN,
+      precipitationMm: num((d.precipitation_sum as unknown[])?.[i]) ?? NaN,
+      precipitationChancePct: num((d.precipitation_probability_max as unknown[])?.[i]),
+      humidityPct: num((d.relative_humidity_2m_mean as unknown[])?.[i]),
+      windMaxKmh: num((d.wind_speed_10m_max as unknown[])?.[i]),
+      et0Mm: num((d.et0_fao_evapotranspiration as unknown[])?.[i]),
+      uvIndexMax: num((d.uv_index_max as unknown[])?.[i]),
+      weatherCode: num((d.weather_code as unknown[])?.[i])
+    });
+  }
+  if (dayList.length === 0) throw new Error('open_meteo_error: no usable forecast days');
+
+  const c = (typeof current === 'object' && current !== null ? current : {}) as Record<string, unknown>;
+  const tempC = num(c.temperature_2m);
+  if (tempC === null) throw new Error('open_meteo_error: missing current temperature');
+
+  // soil_moisture_3_to_9cm is a volume fraction (0–1) → percent.
+  const soilMoistureRaw = num(c.soil_moisture_3_to_9cm);
+  const currentDetail: OpenMeteoCurrentDetail = {
+    tempC,
+    feelsLikeC: num(c.apparent_temperature) ?? tempC,
+    humidityPercent: Math.round(num(c.relative_humidity_2m) ?? 0),
+    dewPointC: num(c.dew_point_2m),
+    windSpeedKmh: num(c.wind_speed_10m) ?? 0,
+    uvIndex: num(c.uv_index) === null ? null : Math.round(num(c.uv_index) as number),
+    weatherCode: num(c.weather_code),
+    soilTempC: num(c.soil_temperature_6cm),
+    soilMoisturePercent:
+      soilMoistureRaw === null ? null : Math.round(Math.min(1, Math.max(0, soilMoistureRaw)) * 100)
+  };
+
+  return {
+    current: currentDetail,
+    shortwaveWm2: num(c.shortwave_radiation),
+    daily: dayList,
+    retrievedAt: new Date().toISOString()
+  };
+}
+
 async function fetchJson(url: string): Promise<unknown> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);

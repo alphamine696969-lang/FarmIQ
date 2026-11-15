@@ -14,6 +14,9 @@ import {
   webFetch,
   toolResultHeader,
   isWebFetchEnabled,
+  hasInlineToolMarkup,
+  extractInlineToolCalls,
+  stripToolMarkup,
   type WebResearchItem
 } from '../webFetch';
 
@@ -275,12 +278,32 @@ export async function generateAnswer(
     };
 
     const raw = await chatCompletion(payload, GENERATION_TIMEOUT_MS);
-    const toolCalls = extractToolCalls(raw);
+    let toolCalls = extractToolCalls(raw);
+    let text = extractText(raw);
+
+    // Fallback: some models write tool calls as text-form <invoke> blocks in
+    // content instead of structured API tool_calls. Parse and execute those
+    // so the research actually happens instead of leaking markup to users.
+    if (toolCalls.length === 0 && text && useTools && hasInlineToolMarkup(text)) {
+      const inline = extractInlineToolCalls(text).slice(0, MAX_TOOL_CALLS_PER_ROUND);
+      if (inline.length > 0) {
+        toolCalls = inline.map((call, index) => ({
+          id: `inline_${round}_${index}`,
+          name: call.name,
+          arguments: JSON.stringify(call.args)
+        }));
+        // Drop the markup from the transcript — only the tool calls matter.
+        const prose = stripToolMarkup(text);
+        if (prose) messages.push({ role: 'user', content: prose });
+        text = '';
+      }
+    }
 
     if (toolCalls.length === 0) {
-      const text = extractText(raw);
       if (!text) return null;
-      return { text, modelUsed: status.generationModel, ...(research.length ? { research } : {}) };
+      const clean = stripToolMarkup(text);
+      if (!clean) return null;
+      return { text: clean, modelUsed: status.generationModel, ...(research.length ? { research } : {}) };
     }
 
     // Record the assistant's tool calls, execute each server-side, reply with results.
@@ -311,7 +334,9 @@ export async function generateAnswer(
   const raw = await chatCompletion(finalPayload, GENERATION_TIMEOUT_MS);
   const text = extractText(raw);
   if (!text) return null;
-  return { text, modelUsed: status.generationModel, ...(research.length ? { research } : {}) };
+  const clean = stripToolMarkup(text);
+  if (!clean) return null;
+  return { text: clean, modelUsed: status.generationModel, ...(research.length ? { research } : {}) };
 }
 
 /* --------------------------- Vision (crop photos) --------------------------- */

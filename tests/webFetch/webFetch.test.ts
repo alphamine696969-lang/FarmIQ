@@ -303,10 +303,96 @@ async function run(): Promise<void> {
     assertEqual(toolMessages.length, 2, 'both bad tool calls answered with tool messages');
     assert(toolMessages.every((m) => Boolean(m.content && m.content.startsWith('Error'))), 'errors are honest tool messages');
     console.log('✔ Malformed/unknown tool calls degrade to honest tool errors, never crash');
+
+    // 5) Text-form tool calls (model writes invoke-blocks as content instead of
+    // structured API tool_calls) must be executed, never leaked to users.
+    completionTurn = 0;
+    gatewayCalls.length = 0;
+    const LT = String.fromCharCode(60);
+    global.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/chat/completions')) {
+        completionTurn += 1;
+        gatewayCalls.push(JSON.parse(String(init?.body || '{}')) as Record<string, unknown>);
+        if (completionTurn === 1) {
+          const invokeText =
+            'Let me check first.\n' +
+            LT + 'invoke name="web_search">' +
+            LT + 'parameter name="query">wheat sowing date Punjab November' + LT + '/parameter>' +
+            LT + '/invoke>';
+          return { ok: true, json: async () => ({ choices: [{ message: { content: invokeText } }] }) } as Response;
+        }
+        return { ok: true, json: async () => ({ choices: [{ message: { content: 'Sow wheat by Nov 20 in Punjab [Web Search].' } }] }) } as Response;
+      }
+      if (url.includes('bing.com/news')) {
+        return { ok: true, status: 200, text: async () => '<rss><channel><item><title>Wheat sowing window in Punjab</title><link>https://news.example/sowing</link><description>Sow by Nov 20.</description><pubDate>Wed, 12 Nov 2026 08:00:00 GMT</pubDate></item></channel></rss>' } as unknown as Response;
+      }
+      return { ok: false, status: 404, url, headers: { get: () => null }, text: async () => '' } as unknown as Response;
+    }) as typeof fetch;
+
+    const inlineRun = await generateAnswer('You are FarmIQ.', [], 'When should I sow wheat in Punjab?');
+    assert(inlineRun, 'inline-invoke run produces an answer');
+    assert(!inlineRun!.text.includes('invoke'), 'no tool markup leaks into the final answer');
+    assert(Boolean(inlineRun!.research && inlineRun!.research.length > 0), 'inline text-form tool call was executed');
+    assertEqual(completionTurn, 2, 'inline tool call consumed one research round + one answer round');
+    console.log('✔ Text-form invoke-block tool calls are executed and never leak into answers');
   } finally {
     global.fetch = originalFetch;
     delete process.env.AI_API_KEY;
   }
+
+  /* -------------------- Relevance filtering of junk results -------------------- */
+  const {
+    filterByRelevance,
+    significantQueryTokens,
+    hasInlineToolMarkup,
+    extractInlineToolCalls,
+    stripToolMarkup
+  } = await import('../../lib/integrations/webFetch');
+
+  const junkQuery = 'best seed of wheat in punjab';
+  const junkCandidates = [
+    { title: 'Wheat', url: 'https://en.wikipedia.org/wiki/Wheat', snippet: 'Wheat is a cereal grain.', source: 'Wikipedia' },
+    { title: 'Cinema of India', url: 'https://en.wikipedia.org/wiki/Cinema_of_India', snippet: 'The cinema of India...', source: 'Wikipedia' },
+    { title: 'Flour', url: 'https://en.wikipedia.org/wiki/Flour', snippet: 'Flour is a powder.', source: 'Wikipedia' },
+    { title: 'Suicides among farmers', url: 'https://en.wikipedia.org/wiki/suicides', snippet: 'A social issue...', source: 'Wikipedia' },
+    { title: 'Wheat sowing varieties for Punjab farmers', url: 'https://news.example/wheat', snippet: 'Recommended varieties.', source: 'Bing News' }
+  ];
+  const relevant = filterByRelevance(junkCandidates, junkQuery);
+  assert(relevant.some((r) => r.title === 'Wheat'), 'topically relevant encyclopedia entry kept');
+  assert(relevant.some((r) => r.title.startsWith('Wheat sowing')), 'relevant news kept');
+  assert(!relevant.some((r) => r.title === 'Cinema of India'), 'irrelevant cinema page dropped');
+  assert(!relevant.some((r) => r.title === 'Flour'), 'irrelevant flour page dropped');
+  assert(!relevant.some((r) => r.title.includes('Suicides')), 'irrelevant social-issue page dropped');
+  assertEqual(filterByRelevance(junkCandidates, 'the of in').length, junkCandidates.length, 'stopword-only query passes through');
+  assert(significantQueryTokens(junkQuery).includes('wheat'), 'significant tokens keep topical words');
+  assert(!significantQueryTokens('what is the best news today').includes('best'), 'generic phrasing filtered from tokens');
+  console.log('✔ Relevance filter drops junk encyclopedia matches, keeps topical results');
+
+  /* --------------------- Inline markup parsing / stripping --------------------- */
+  const LT = String.fromCharCode(60);
+  const markup =
+    'Sowing guidance:\n' +
+    LT + 'function_calls>\n' +
+    LT + 'invoke name="web_fetch">\n' +
+    LT + 'parameter name="url">https://example.com/guide' + LT + '/parameter>\n' +
+    LT + '/invoke>\n' +
+    LT + '/function_calls>\nDone.';
+  assert(hasInlineToolMarkup(markup), 'markup detected');
+  assert(!hasInlineToolMarkup('Plain answer with bold text only.'), 'plain text not flagged');
+  const parsedCalls = extractInlineToolCalls(markup);
+  assertEqual(parsedCalls.length, 1, 'one inline invoke parsed');
+  assertEqual(parsedCalls[0].name, 'web_fetch', 'inline invoke name parsed');
+  assertEqual(parsedCalls[0].args.url, 'https://example.com/guide', 'inline parameter parsed');
+  const antmlCalls = extractInlineToolCalls(
+    LT + 'antml:invoke name="web_search">' + LT + 'antml:parameter name="query">wheat' + LT + '/antml:parameter>' + LT + '/antml:invoke>'
+  );
+  assertEqual(antmlCalls.length, 1, 'antml-prefixed invoke parsed');
+  assertEqual(antmlCalls[0].args.query, 'wheat', 'antml parameter parsed');
+  const strippedText = stripToolMarkup(markup);
+  assert(!strippedText.includes('invoke') && !strippedText.includes('function_calls'), 'markup fully stripped');
+  assert(strippedText.includes('Sowing guidance') && strippedText.includes('Done.'), 'surrounding prose preserved');
+  console.log('✔ Inline tool markup parses and strips cleanly (incl. antml: prefix)');
 
   assertEqual(isWebFetchEnabled(), true, 'tools enabled by default');
   console.log('All web research tool tests passed successfully!');

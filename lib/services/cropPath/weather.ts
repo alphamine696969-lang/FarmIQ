@@ -18,7 +18,7 @@ export interface WeatherNote {
 export interface CropWeatherSummary {
   available: true;
   isLive: true;
-  provider: 'NASA POWER' | 'Open-Meteo';
+  provider: 'Open-Meteo';
   locationName: string;
   country?: string;
   latitude: number;
@@ -138,7 +138,7 @@ export function summarizeWeatherForCrop(
   return {
     available: true,
     isLive: true,
-    provider: 'NASA POWER',
+    provider: 'Open-Meteo',
     locationName: locationLabel,
     country,
     latitude: snapshot.latitude,

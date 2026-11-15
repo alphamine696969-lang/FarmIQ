@@ -7,6 +7,14 @@ export const maxDuration = 180;
 function normalizeAgronomyText(text: string): string {
   let cleaned = text;
 
+  // 0. Strip any leaked tool-call markup (<invoke>/<function_calls>/<parameter>)
+  cleaned = cleaned
+    .replace(/<\/?(?:antml:)?function_calls>/gi, '')
+    .replace(/<(?:antml:)?invoke\b[^>]*>[\s\S]*?<\/(?:antml:)?invoke>/gi, '')
+    .replace(/<\/?(?:antml:)?invoke\b[^>]*>/gi, '')
+    .replace(/<(?:antml:)?parameter\b[^>]*>[\s\S]*?<\/(?:antml:)?parameter>/gi, '')
+    .replace(/<\/?(?:antml:)?parameter\b[^>]*>/gi, '');
+
   // 1. Scrub internal knowledge-base tags like [Crop Profiles / kb_diseases] or [CHUNK 1 — ...]
   cleaned = cleaned
     .replace(/\[\s*(?:Crop Profiles\s*\/\s*)?kb_[a-z0-9_-]+[^\]]*\]/gi, '')

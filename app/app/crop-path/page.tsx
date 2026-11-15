@@ -459,7 +459,7 @@ export default function CropPathPage() {
         summary: {
           available: true,
           isLive: true,
-          provider: 'NASA POWER',
+          provider: 'Open-Meteo',
           locationName: context.location?.label || placeLabel(regionPlace || { name: region, latitude: 0, longitude: 0 }),
           country: context.location?.country,
           latitude: context.location?.latitude ?? regionPlace?.latitude ?? 0,
@@ -1145,7 +1145,7 @@ export default function CropPathPage() {
                     {cropContext.days?.length ? ` 14-day rain total ${cropContext.days.reduce((s, d) => s + (Number.isFinite(d.precipitationMm) ? d.precipitationMm : 0), 0).toFixed(0)} mm •` : ''}
                     Soil: {cropContext.soil ? <strong>{cropContext.soil.textureClass}</strong> : 'unavailable — select manually'}
                   </p>
-                  <p className="text-[10px] opacity-80">Sources: NASA POWER Agroclimatology{cropContext.soil ? ` + ${cropContext.soil.sourceName}` : ''} • retrieved {cropContext.retrievedAt?.slice(0, 16).replace('T', ' ')} UTC</p>
+                  <p className="text-[10px] opacity-80">Sources: Open-Meteo forecast{cropContext.soil ? ` + ${cropContext.soil.sourceName}` : ''} • retrieved {cropContext.retrievedAt?.slice(0, 16).replace('T', ' ')} UTC</p>
                 </div>
               )}
               {contextState === 'unavailable' && (
@@ -1163,7 +1163,7 @@ export default function CropPathPage() {
               {recWeather.state === 'ready' && recWeather.summary && (
                 <div className="flex flex-wrap items-center gap-2 text-[11px] bg-[#EDF7FF] border border-[#BEE3F8] rounded-2xl px-4 py-3 text-[#004263] font-medium">
                   <CloudSun className="w-4 h-4 shrink-0" />
-                  <span className="font-extrabold">Weather-informed (live, NASA POWER):</span>
+                  <span className="font-extrabold">Weather-informed (live, Open-Meteo):</span>
                   <span>
                     {recWeather.summary.currentTempC !== null ? `${recWeather.summary.currentTempC.toFixed(0)}°C now` : 'live forecast'} in {recWeather.summary.locationName}
                     {recWeather.summary.precipNext3DaysMm > 0 ? ` • ${recWeather.summary.precipNext3DaysMm} mm rain next 3 days` : ' • dry next 3 days'}

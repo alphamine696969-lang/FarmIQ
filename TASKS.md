@@ -54,6 +54,7 @@ Update this file after every workflow. Use `docs/TASK_TEMPLATE.md` for substanti
 | FIQ-052 | P1 | Implement assistant and citation validation | FIQ-051 | DONE | Invalid citations are rejected |
 | FIQ-054 | P1 | Implement layered chatbot request pipeline | FIQ-052 | DONE | All 7 pipeline layers run end-to-end with tests; unconfigured providers degrade with labeled fallbacks |
 | FIQ-055 | P1 | Add keyless web research tools (web_search/web_fetch); remove preloaded statics | FIQ-054 | DONE | STATIC_CHUNKS removed; model-initiated tool loop researches before every answer (ADR-019); marketplace news + scanner use the same keyless tools; SSRF-guarded `web_fetch`; honest disabled states; `docs/AI_TOOLS.md` |
+| FIQ-056 | P1 | Harden web research pipeline: inline tool markup + junk-result filtering | FIQ-055 | DONE | Text-form `<invoke>` tool calls executed instead of leaked; answers scrubbed of tool markup (prompt rule + chat-route net); relevance filter drops junk search matches; tests in `tests/webFetch/webFetch.test.ts` |
 | FIQ-053 | P2 | Implement multilingual and voice enhancements | FIQ-052 | TODO | Unsupported capabilities degrade gracefully |
 
 ## Markets and weather
@@ -63,6 +64,7 @@ Update this file after every workflow. Use `docs/TASK_TEMPLATE.md` for substanti
 | FIQ-061 | P1 | Implement market search and trends | FIQ-060 | DONE | Real observations only; freshness shown |
 | FIQ-062 | P1 | Implement weather provider interface | FIQ-020 | DONE | Typed adapter and safe fallback exist |
 | FIQ-063 | P1 | Implement forecast and alert UI | FIQ-062 | DONE | Timestamped provider data and alerts |
+| FIQ-064 | P1 | Replace NASA POWER with Apple WeatherKit weather service | FIQ-062, FIQ-063 | DONE | WeatherKit ES256 JWT adapter + mappers (ADR-020); keyless Open-Meteo fallback labeled honestly; soil/ET₀ supplemented with provenance; NASA routes/branding/mislabels removed; `tests/weather/weatherKit.test.ts` |
 
 ## Crop intelligence
 | ID | Priority | Task | Dependencies | Status | Acceptance criteria |

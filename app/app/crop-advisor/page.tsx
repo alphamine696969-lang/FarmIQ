@@ -379,7 +379,7 @@ export default function CropAdvisorPage() {
           <p>
             Every crop in the {CROP_ADVISORY_CATALOG.length}-crop catalog is scored against your parameters: pH in range (+5) or out (−35),
             temperature in range or out (−30), seasonal rainfall in range or out (−20), soil texture match (−15 if not) — clamped to 20–98%.
-            Temperature and rainfall are observed agroclimatology for the selected location (NASA POWER); soil texture and pH come from ISRIC SoilGrids
+            Temperature and rainfall are observed agroclimatology for the selected location (Open-Meteo observed); soil texture and pH come from ISRIC SoilGrids
             when available. Crop ranges are accepted agronomic envelopes from the approved source registry — they are guidance, not guarantees,
             and this advisor makes no yield or profit claims.
           </p>

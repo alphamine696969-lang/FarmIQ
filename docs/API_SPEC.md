@@ -23,7 +23,7 @@ Provider failures never return 500 for upstream issues — they degrade to `data
 | POST | `/api/profit/calculate` | Deterministic profit / break-even calculation | None |
 | POST | `/api/markets/prices` | Region-based **official** crop prices: resolves place/GPS → country, returns Eurostat producer prices (latest published period) or an honest not-covered state; never serves sample data | Eurostat `apri_ap_crpouta`, Open-Meteo geocoding, Photon reverse |
 | POST | `/api/markets/news` | Latest agriculture/market **web-research** news for a location (place/GPS/label); keyless Bing News RSS + Wikipedia, recency-biased; honest `empty` / `web_research_disabled` states — never fake headlines | Keyless web research (ADR-019) |
-| GET | `/api/weather/current` | Current agro-weather snapshot (**sample data, labeled**) | None |
+| GET | `/api/weather/current` | Live agro-weather snapshot (current + 7-day forecast + derived agro alerts): **Apple WeatherKit** when `APPLE_*` keys are configured, **keyless Open-Meteo** fallback; soil/solar/ET₀ supplemented from Open-Meteo; nullable fields render honestly (ADR-020) | Apple WeatherKit (optional), Open-Meteo |
 
 ### AI assistant
 

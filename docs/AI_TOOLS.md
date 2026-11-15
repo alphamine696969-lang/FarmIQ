@@ -31,7 +31,12 @@ request includes two OpenAI function-calling tools, and the loop is bounded to
    - **Bing News RSS** (`bing.com/news/search?...&format=rss`) — current
      articles with publisher + date. Robots: `news/search` is allowed.
    - **Wikipedia search API** — encyclopedic coverage with snippets.
-   - Results are merged, deduped by URL, capped at 8.
+   - Results are **relevance-filtered** against the query (significant title
+     hit, or two hits across title+snippet) so loose encyclopedia matches
+     never surface; then merged, deduped by URL, capped at 8.
+   - If a model emits tool calls as **text-form `<invoke>` blocks** instead of
+     structured API `tool_calls`, they are parsed and executed the same way —
+     and any leftover markup is stripped from the final answer (FIQ-056).
 2. `web_fetch(url)` — reads a specific public page:
    - http(s) only, standard ports only, private/loopback/metadata addresses
      and `.local`/`.internal` hosts blocked (shape check + DNS check).

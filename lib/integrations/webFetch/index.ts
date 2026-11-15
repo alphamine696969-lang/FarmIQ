@@ -409,8 +409,11 @@ async function fetchWikipedia(query: string): Promise<WebSearchItem[]> {
 
 /**
  * Keyless web search tool: merges Bing News RSS (fresh articles) with the
- * Wikipedia search API (encyclopedic coverage). Returns an honest empty
- * outcome with a reason when nothing is found or fetching is disabled.
+ * Wikipedia search API (encyclopedic coverage). Results are relevance-filtered
+ * against the query (title/snippet token overlap) so loose encyclopedia
+ * matches like "Cinema of India" for a wheat-seed query never surface.
+ * Returns an honest empty outcome with a reason when nothing relevant is
+ * found or fetching is disabled.
  */
 export async function webSearch(query: string, options: { recent?: boolean } = {}): Promise<WebSearchOutcome> {
   if (!isWebFetchEnabled()) {
@@ -419,10 +422,14 @@ export async function webSearch(query: string, options: { recent?: boolean } = {
   const sanitized = query.trim().slice(0, 300);
   if (!sanitized) return { enabled: true, results: [], reason: 'Empty search query.' };
 
-  const [news, wiki] = await Promise.all([
+  const [rawNews, rawWiki] = await Promise.all([
     fetchBingNews(sanitized, options.recent !== false),
     fetchWikipedia(sanitized)
   ]);
+
+  // Relevance gate: require a query token in the title, or two across title+snippet.
+  const news = filterByRelevance(rawNews, sanitized);
+  const wiki = filterByRelevance(rawWiki, sanitized);
 
   const seen = new Set<string>();
   const results: WebSearchItem[] = [];
@@ -436,8 +443,95 @@ export async function webSearch(query: string, options: { recent?: boolean } = {
   return {
     enabled: true,
     results,
-    reason: results.length === 0 ? 'The search providers returned no results for that query.' : undefined
+    reason:
+      results.length === 0
+        ? rawNews.length + rawWiki.length > 0
+          ? 'The search providers returned results, but none were relevant to that query.'
+          : 'The search providers returned no results for that query.'
+        : undefined
   };
+}
+
+/* ------------------------- Relevance filtering -------------------------- */
+
+/** Generic phrasing that carries no topical signal for relevance matching. */
+const QUERY_STOPWORDS = new Set([
+  'the', 'and', 'for', 'with', 'that', 'this', 'from', 'are', 'was', 'were',
+  'you', 'your', 'how', 'what', 'when', 'where', 'which', 'why', 'who', 'does',
+  'did', 'can', 'could', 'should', 'would', 'will', 'about', 'into', 'over',
+  'under', 'between', 'best', 'latest', 'today', 'now', 'current', 'recent',
+  'news', 'update', 'updates', 'tell', 'give', 'show', 'find', 'please'
+]);
+
+/** Meaningful query tokens (≥3 chars, not generic phrasing). */
+export function significantQueryTokens(query: string): string[] {
+  return query
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 3 && !QUERY_STOPWORDS.has(token));
+}
+
+/**
+ * Keep a search result only when it demonstrably matches the query:
+ * at least one significant token in the title, or two across title+snippet.
+ * Queryless/stopword-only queries pass everything through unchanged.
+ */
+export function filterByRelevance(items: WebSearchItem[], query: string): WebSearchItem[] {
+  const tokens = significantQueryTokens(query);
+  if (tokens.length === 0) return items;
+  return items.filter((item) => {
+    const title = item.title.toLowerCase();
+    const snippet = item.snippet.toLowerCase();
+    const titleHits = tokens.filter((token) => title.includes(token)).length;
+    const snippetHits = tokens.filter((token) => snippet.includes(token)).length;
+    return titleHits >= 1 || titleHits + snippetHits >= 2;
+  });
+}
+
+/* ------------------- Inline (text-form) tool-call handling --------------- */
+
+export interface InlineToolCall {
+  name: string;
+  args: Record<string, string>;
+}
+
+const INVOKE_BLOCK_RE = /<(?:antml:)?invoke\s+name\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/(?:antml:)?invoke>/gi;
+const PARAM_BLOCK_RE = /<(?:antml:)?parameter\s+name\s*=\s*["']([^"']+)["']\s*>([\s\S]*?)<\/(?:antml:)?parameter>/gi;
+
+/** True when text looks like the model wrote tool calls as plain markup. */
+export function hasInlineToolMarkup(text: string): boolean {
+  return /<(?:antml:)?invoke\s+name\s*=/i.test(text) || /<function_calls>/i.test(text);
+}
+
+/**
+ * Parse text-form tool calls (models sometimes emit `<invoke name="...">…`
+ * blocks as content instead of structured API `tool_calls`). Returns []
+ * when no complete invoke blocks exist.
+ */
+export function extractInlineToolCalls(text: string): InlineToolCall[] {
+  const calls: InlineToolCall[] = [];
+  for (const match of text.matchAll(INVOKE_BLOCK_RE)) {
+    const name = match[1]?.trim();
+    if (!name) continue;
+    const args: Record<string, string> = {};
+    for (const param of (match[2] || '').matchAll(PARAM_BLOCK_RE)) {
+      if (param[1]) args[param[1].trim()] = (param[2] || '').trim();
+    }
+    calls.push({ name, args });
+  }
+  return calls;
+}
+
+/** Remove any tool-call markup from a model answer so it never reaches users. */
+export function stripToolMarkup(text: string): string {
+  return text
+    .replace(/<\/?(?:antml:)?function_calls>/gi, '')
+    .replace(/<(?:antml:)?invoke\b[^>]*>[\s\S]*?<\/(?:antml:)?invoke>/gi, '')
+    .replace(/<\/?(?:antml:)?invoke\b[^>]*>/gi, '')
+    .replace(/<(?:antml:)?parameter\b[^>]*>[\s\S]*?<\/(?:antml:)?parameter>/gi, '')
+    .replace(/<\/?(?:antml:)?parameter\b[^>]*>/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 /* --------------------------- Tool schema (OpenAI) ------------------------ */

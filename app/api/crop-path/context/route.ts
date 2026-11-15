@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
         retrievedAt: forecast.retrievedAt
       },
       meta: {
-        providers: ['NASA POWER (agroclimatology)', soil ? 'ISRIC SoilGrids (soil)' : 'SoilGrids unavailable'],
+        providers: ['Open-Meteo (14-day forecast)', soil ? 'ISRIC SoilGrids (soil)' : 'SoilGrids unavailable'],
         isLive: true
       }
     };
